@@ -1,0 +1,120 @@
+{
+  "model_path": "models\\tinyml\\sentry_tinyml_int8.tflite",
+  "dataset_path": "data\\raw\\sentry_synthetic_test.csv",
+  "rows": 12000,
+  "class_distribution": {
+    "ALCOHOL_SANITIZER": 2400,
+    "AMBIENT_CLEAN": 2400,
+    "EXPLOSIVE_PROXY": 2400,
+    "NARCOTIC_PROXY": 2400,
+    "WEATHER_DRIFT": 2400
+  },
+  "features": [
+    "VMQ2",
+    "VMQ3",
+    "VMQ135",
+    "VSEN0568",
+    "dVdt_max",
+    "temperature",
+    "humidity"
+  ],
+  "classes": [
+    "ALCOHOL_SANITIZER",
+    "AMBIENT_CLEAN",
+    "EXPLOSIVE_PROXY",
+    "NARCOTIC_PROXY",
+    "WEATHER_DRIFT"
+  ],
+  "input_dtype": "<class 'numpy.int8'>",
+  "input_shape": [
+    1,
+    7
+  ],
+  "input_scale": 0.040361322462558746,
+  "input_zero_point": -59,
+  "output_dtype": "<class 'numpy.int8'>",
+  "output_shape": [
+    1,
+    5
+  ],
+  "output_scale": 0.00390625,
+  "output_zero_point": -128,
+  "model_size_bytes": 3608,
+  "model_size_kb": 3.5234375,
+  "metrics": {
+    "accuracy": 0.8426666666666667,
+    "macro_precision": 0.8425082622263925,
+    "macro_recall": 0.8426666666666666,
+    "macro_f1": 0.8405077600782798,
+    "weighted_f1": 0.8405077600782798,
+    "per_class": {
+      "ALCOHOL_SANITIZER": {
+        "precision": 0.854157960718763,
+        "recall": 0.8516666666666667,
+        "f1": 0.8529104944711037,
+        "support": 2400
+      },
+      "AMBIENT_CLEAN": {
+        "precision": 0.7789957567185289,
+        "recall": 0.9179166666666667,
+        "f1": 0.8427697016067329,
+        "support": 2400
+      },
+      "EXPLOSIVE_PROXY": {
+        "precision": 0.9467058329836341,
+        "recall": 0.94,
+        "f1": 0.9433409993727786,
+        "support": 2400
+      },
+      "NARCOTIC_PROXY": {
+        "precision": 0.879983036471586,
+        "recall": 0.8645833333333334,
+        "f1": 0.8722152164775115,
+        "support": 2400
+      },
+      "WEATHER_DRIFT": {
+        "precision": 0.7526987242394504,
+        "recall": 0.6391666666666667,
+        "f1": 0.6913023884632717,
+        "support": 2400
+      }
+    },
+    "confusion_matrix": [
+      [
+        2044,
+        120,
+        9,
+        104,
+        123
+      ],
+      [
+        74,
+        2203,
+        2,
+        5,
+        116
+      ],
+      [
+        8,
+        9,
+        2256,
+        3,
+        124
+      ],
+      [
+        160,
+        14,
+        10,
+        2075,
+        141
+      ],
+      [
+        107,
+        482,
+        106,
+        171,
+        1534
+      ]
+    ]
+  }
+}

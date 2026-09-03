@@ -1,0 +1,10 @@
+{
+  "description": "Enhance railway security with real-time monitoring and intelligence from connected detection devices, ensuring safe travel across Indian railway networks.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

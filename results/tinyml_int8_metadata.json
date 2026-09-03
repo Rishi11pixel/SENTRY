@@ -1,0 +1,17 @@
+{
+  "model_path": "models\\tinyml\\sentry_tinyml_int8.tflite",
+  "model_size_bytes": 3608,
+  "model_size_kb": 3.5234375,
+  "input_shape": [
+    1,
+    7
+  ],
+  "input_dtype": "<class 'numpy.int8'>",
+  "input_quantization_scale": 0.0,
+  "input_zero_point": 0,
+  "output_dtype": "<class 'numpy.int8'>",
+  "output_quantization_scale": 0.0,
+  "output_zero_point": 0,
+  "representative_sample_count": 500,
+  "representative_dataset_source": "data\\raw\\sentry_synthetic_dataset.csv"
+}
