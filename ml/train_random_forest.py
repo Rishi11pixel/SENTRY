@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import joblib
 
@@ -24,10 +25,18 @@ FEATURES = [
     "VMQ2",
     "VMQ3",
     "VMQ135",
-    "VSEN0568",
+    "VSEN0567",
     "dVdt_max",
     "temperature",
     "humidity",
+]
+
+CLASSES = [
+    "SAFE",
+    "WEATHER",
+    "ALCOHOL",
+    "EXPLOSIVE",
+    "NARCOTIC",
 ]
 
 df = pd.read_csv(DATA_PATH)
@@ -36,7 +45,8 @@ X = df[FEATURES]
 y_text = df["label"]
 
 encoder = LabelEncoder()
-y = encoder.fit_transform(y_text)
+encoder.classes_ = np.array(CLASSES)
+y = np.array([CLASSES.index(label) for label in y_text])
 
 print("Classes:")
 for number, name in enumerate(encoder.classes_):

@@ -23,23 +23,24 @@ SCALER_SCALE_PATH = ROOT / "models" / "tinyml" / "scaler_scale.npy"
 RESULT_DIR = ROOT / "results"
 JSON_PATH = RESULT_DIR / "final_int8_evaluation.json"
 PLOT_PATH = RESULT_DIR / "final_int8_confusion_matrix.png"
+FLOAT32_REPORT_PATH = RESULT_DIR / "final_evaluation.json"
 
 FEATURES = [
     "VMQ2",
     "VMQ3",
     "VMQ135",
-    "VSEN0568",
+    "VSEN0567",
     "dVdt_max",
     "temperature",
     "humidity",
 ]
 
 CLASSES = [
-    "ALCOHOL_SANITIZER",
-    "AMBIENT_CLEAN",
-    "EXPLOSIVE_PROXY",
-    "NARCOTIC_PROXY",
-    "WEATHER_DRIFT",
+    "SAFE",
+    "WEATHER",
+    "ALCOHOL",
+    "EXPLOSIVE",
+    "NARCOTIC",
 ]
 
 
@@ -235,8 +236,11 @@ def main() -> None:
     with JSON_PATH.open("w", encoding="utf-8") as fp:
         json.dump(report, fp, indent=2)
 
-    float32_accuracy = 0.8537
-    float32_macro_f1 = 0.8553
+    with FLOAT32_REPORT_PATH.open(encoding="utf-8") as fp:
+        float32_report = json.load(fp)["tinyml_float32"]
+
+    float32_accuracy = float(float32_report["accuracy"])
+    float32_macro_f1 = float(float32_report["macro_f1"])
     int8_accuracy = metrics["accuracy"] * 100.0
     int8_macro_f1 = metrics["macro_f1"] * 100.0
     accuracy_delta = int8_accuracy - float32_accuracy * 100.0

@@ -15,7 +15,7 @@ features = [
     "VMQ2",
     "VMQ3",
     "VMQ135",
-    "VSEN0568",
+    "VSEN0567",
     "dVdt_max",
     "temperature",
     "humidity",

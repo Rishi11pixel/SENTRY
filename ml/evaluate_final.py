@@ -32,18 +32,18 @@ FEATURES = [
     "VMQ2",
     "VMQ3",
     "VMQ135",
-    "VSEN0568",
+    "VSEN0567",
     "dVdt_max",
     "temperature",
     "humidity",
 ]
 
 CLASSES = [
-    "ALCOHOL_SANITIZER",
-    "AMBIENT_CLEAN",
-    "EXPLOSIVE_PROXY",
-    "NARCOTIC_PROXY",
-    "WEATHER_DRIFT",
+    "SAFE",
+    "WEATHER",
+    "ALCOHOL",
+    "EXPLOSIVE",
+    "NARCOTIC",
 ]
 
 

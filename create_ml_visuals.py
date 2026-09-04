@@ -1,32 +1,45 @@
 
 from pathlib import Path
 import json
+import joblib
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import FancyBboxPatch, FancyArrowPatch
 
 CLASSES = [
-    "ALCOHOL_SANITIZER", "AMBIENT_CLEAN", "EXPLOSIVE_PROXY",
-    "NARCOTIC_PROXY", "WEATHER_DRIFT"
+    "SAFE", "WEATHER", "ALCOHOL", "EXPLOSIVE", "NARCOTIC"
 ]
 
-RF_CM = np.array([
-    [1953,139,5,100,203], [7,2160,1,3,229], [0,11,2217,6,166],
-    [135,20,8,1992,245], [45,430,76,97,1752]
-])
-FLOAT_CM = np.array([
-    [1960,113,11,130,186], [29,2116,5,5,245], [1,9,2239,2,149],
-    [85,11,7,2085,212], [45,323,79,109,1844]
-])
+def load_reports(root):
+    with (root / "results" / "final_evaluation.json").open(encoding="utf-8") as f:
+        final_report = json.load(f)
+    with (root / "results" / "final_int8_evaluation.json").open(encoding="utf-8") as f:
+        int8_report = json.load(f)
+    return final_report, int8_report
 
-RF_ACC, RF_F1 = 83.95, 84.15
-FLOAT_ACC, FLOAT_F1 = 85.37, 85.53
-INT8_ACC, INT8_F1 = 84.27, 84.05
 
-FEATURES = {
-    "VMQ3":36.15, "VSEN0568":25.69, "VMQ135":24.93, "VMQ2":10.13,
-    "dVdt_max":1.91, "humidity":1.02, "temperature":0.18
-}
+def load_visual_data(root):
+    final_report, int8_report = load_reports(root)
+    rf_model = joblib.load(root / "models" / "random_forest" / "random_forest.joblib")
+    feature_names = [
+        "VMQ2", "VMQ3", "VMQ135", "VSEN0567",
+        "dVdt_max", "temperature", "humidity",
+    ]
+    features = dict(zip(feature_names, rf_model.feature_importances_ * 100.0))
+    return {
+        "rf_cm": np.asarray(final_report["random_forest"]["confusion_matrix"]),
+        "float_cm": np.asarray(final_report["tinyml_float32"]["confusion_matrix"]),
+        "int8_cm": np.asarray(int8_report["metrics"]["confusion_matrix"]),
+        "rf_acc": final_report["random_forest"]["accuracy"] * 100.0,
+        "rf_f1": final_report["random_forest"]["macro_f1"] * 100.0,
+        "float_acc": final_report["tinyml_float32"]["accuracy"] * 100.0,
+        "float_f1": final_report["tinyml_float32"]["macro_f1"] * 100.0,
+        "int8_acc": int8_report["metrics"]["accuracy"] * 100.0,
+        "int8_f1": int8_report["metrics"]["macro_f1"] * 100.0,
+        "features": features,
+        "int8_size_kb": int8_report["model_size_kb"],
+        "int8_accuracy_change": (int8_report["metrics"]["accuracy"] - final_report["tinyml_float32"]["accuracy"]) * 100.0,
+    }
 
 def find_cm(x):
     if isinstance(x, dict):
@@ -58,9 +71,9 @@ def save(fig, p):
     plt.close(fig)
     print("Saved:", p)
 
-def performance(out):
+def performance(out, data):
     names=["Random Forest","TinyML Float32","TinyML INT8"]
-    acc=[RF_ACC,FLOAT_ACC,INT8_ACC]; f1=[RF_F1,FLOAT_F1,INT8_F1]
+    acc=[data["rf_acc"],data["float_acc"],data["int8_acc"]]; f1=[data["rf_f1"],data["float_f1"],data["int8_f1"]]
     x=np.arange(3); w=.36
     fig,ax=plt.subplots(figsize=(10,6))
     a=ax.bar(x-w/2,acc,w,label="Accuracy"); b=ax.bar(x+w/2,f1,w,label="Macro F1")
@@ -91,8 +104,8 @@ def cm_plot(cm,title,name,out):
     fig.colorbar(im,ax=ax,fraction=.046,pad=.04,label="Samples")
     save(fig,out/name)
 
-def feature_plot(out):
-    items=sorted(FEATURES.items(),key=lambda x:x[1])
+def feature_plot(out, data):
+    items=sorted(data["features"].items(),key=lambda x:x[1])
     fig,ax=plt.subplots(figsize=(10,6))
     bars=ax.barh([x[0] for x in items],[x[1] for x in items])
     ax.set_title("SENTRY Sensor-Fusion Feature Importance")
@@ -101,8 +114,8 @@ def feature_plot(out):
         ax.text(v+.5,bar.get_y()+bar.get_height()/2,f"{v:.2f}%",va="center",fontsize=9)
     save(fig,out/"05_feature_importance.png")
 
-def quant_plot(out):
-    metrics=["Accuracy","Macro F1"]; f=[FLOAT_ACC,FLOAT_F1]; q=[INT8_ACC,INT8_F1]
+def quant_plot(out, data):
+    metrics=["Accuracy","Macro F1"]; f=[data["float_acc"],data["float_f1"]]; q=[data["int8_acc"],data["int8_f1"]]
     x=np.arange(2); w=.36
     fig,ax=plt.subplots(figsize=(9,6))
     a=ax.bar(x-w/2,f,w,label="TinyML Float32"); b=ax.bar(x+w/2,q,w,label="TinyML INT8")
@@ -112,7 +125,7 @@ def quant_plot(out):
         for bar in bars:
             ax.text(bar.get_x()+bar.get_width()/2,bar.get_height()+.2,
                     f"{bar.get_height():.2f}%",ha="center",fontsize=9)
-    ax.text(.98,.03,"INT8 model size: 3.52 KB\nAccuracy change: −1.10 percentage points",
+    ax.text(.98,.03,f"INT8 model size: {data['int8_size_kb']:.2f} KB\nAccuracy change: {data['int8_accuracy_change']:.2f} percentage points",
             transform=ax.transAxes,ha="right",va="bottom",fontsize=9)
     save(fig,out/"06_quantization_tradeoff.png")
 
@@ -138,14 +151,14 @@ def architecture(out):
 def main():
     root=Path(__file__).resolve().parent
     out=root/"results"/"visuals"; out.mkdir(parents=True,exist_ok=True)
-    int8_cm=get_int8_cm(root)
-    for cm in (RF_CM,FLOAT_CM,int8_cm):
+    data = load_visual_data(root)
+    for cm in (data["rf_cm"],data["float_cm"],data["int8_cm"]):
         if cm.sum()!=12000: raise ValueError("Each final confusion matrix must contain 12,000 samples.")
-    performance(out)
-    cm_plot(RF_CM,"SENTRY Random Forest — Final Blind Test","02_confusion_random_forest.png",out)
-    cm_plot(FLOAT_CM,"SENTRY TinyML Float32 — Final Blind Test","03_confusion_tinyml_float32.png",out)
-    cm_plot(int8_cm,"SENTRY TinyML INT8 — Final Blind Test","04_confusion_tinyml_int8.png",out)
-    feature_plot(out); quant_plot(out); architecture(out)
+    performance(out, data)
+    cm_plot(data["rf_cm"],"SENTRY Random Forest — Final Blind Test","02_confusion_random_forest.png",out)
+    cm_plot(data["float_cm"],"SENTRY TinyML Float32 — Final Blind Test","03_confusion_tinyml_float32.png",out)
+    cm_plot(data["int8_cm"],"SENTRY TinyML INT8 — Final Blind Test","04_confusion_tinyml_int8.png",out)
+    feature_plot(out, data); quant_plot(out, data); architecture(out)
     print("\nSENTRY ML visual generation complete.")
     print("Output:",out)
 

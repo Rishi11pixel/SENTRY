@@ -3,186 +3,313 @@
     "path": "data\\raw\\sentry_synthetic_test.csv",
     "rows": 12000,
     "class_distribution": {
-      "ALCOHOL_SANITIZER": 2400,
-      "AMBIENT_CLEAN": 2400,
-      "EXPLOSIVE_PROXY": 2400,
-      "NARCOTIC_PROXY": 2400,
-      "WEATHER_DRIFT": 2400
+      "SAFE": 2400,
+      "WEATHER": 2400,
+      "ALCOHOL": 2400,
+      "EXPLOSIVE": 2400,
+      "NARCOTIC": 2400
     },
     "feature_order": [
       "VMQ2",
       "VMQ3",
       "VMQ135",
-      "VSEN0568",
+      "VSEN0567",
       "dVdt_max",
       "temperature",
       "humidity"
     ],
     "class_order": [
-      "ALCOHOL_SANITIZER",
-      "AMBIENT_CLEAN",
-      "EXPLOSIVE_PROXY",
-      "NARCOTIC_PROXY",
-      "WEATHER_DRIFT"
+      "SAFE",
+      "WEATHER",
+      "ALCOHOL",
+      "EXPLOSIVE",
+      "NARCOTIC"
     ],
     "final_test_set_used_only_for_evaluation": true
   },
   "random_forest": {
-    "accuracy": 0.8395,
-    "macro_precision": 0.8475273516364805,
-    "macro_recall": 0.8394999999999999,
-    "macro_f1": 0.841505636258528,
-    "weighted_f1": 0.8415056362585281,
+    "accuracy": 0.8945,
+    "macro_precision": 0.8970368462505427,
+    "macro_recall": 0.8945000000000001,
+    "macro_f1": 0.8949843604658572,
+    "weighted_f1": 0.8949843604658572,
     "per_class": {
-      "ALCOHOL_SANITIZER": {
-        "precision": 0.9126168224299065,
-        "recall": 0.81375,
-        "f1": 0.860352422907489,
+      "SAFE": {
+        "precision": 0.8579632465543645,
+        "recall": 0.93375,
+        "f1": 0.8942537909018355,
         "support": 2400
       },
-      "AMBIENT_CLEAN": {
-        "precision": 0.782608695652174,
-        "recall": 0.9,
-        "f1": 0.8372093023255814,
+      "WEATHER": {
+        "precision": 0.9802284710017575,
+        "recall": 0.9295833333333333,
+        "f1": 0.9542343883661248,
         "support": 2400
       },
-      "EXPLOSIVE_PROXY": {
-        "precision": 0.9609882964889467,
-        "recall": 0.92375,
-        "f1": 0.9420012746972594,
+      "ALCOHOL": {
+        "precision": 0.8202692003167062,
+        "recall": 0.8633333333333333,
+        "f1": 0.8412505075111653,
         "support": 2400
       },
-      "NARCOTIC_PROXY": {
-        "precision": 0.9062784349408554,
-        "recall": 0.83,
-        "f1": 0.8664636798608091,
+      "EXPLOSIVE": {
+        "precision": 0.9277469003847798,
+        "recall": 0.9041666666666667,
+        "f1": 0.9158050221565731,
         "support": 2400
       },
-      "WEATHER_DRIFT": {
-        "precision": 0.6751445086705202,
-        "recall": 0.73,
-        "f1": 0.7015015015015015,
+      "NARCOTIC": {
+        "precision": 0.8989764129951046,
+        "recall": 0.8416666666666667,
+        "f1": 0.8693780933935873,
         "support": 2400
       }
     },
     "confusion_matrix": [
       [
-        1953,
-        139,
-        5,
-        100,
-        203
+        2241,
+        32,
+        78,
+        35,
+        14
       ],
       [
-        7,
-        2160,
-        1,
-        3,
-        229
+        93,
+        2231,
+        12,
+        36,
+        28
       ],
       [
+        168,
         0,
-        11,
-        2217,
-        6,
-        166
+        2072,
+        53,
+        107
       ],
       [
-        135,
-        20,
+        87,
+        5,
+        60,
+        2170,
+        78
+      ],
+      [
+        23,
         8,
-        1992,
-        245
-      ],
-      [
+        304,
         45,
-        430,
-        76,
-        97,
-        1752
+        2020
       ]
     ]
   },
   "tinyml_float32": {
-    "accuracy": 0.8536666666666667,
-    "macro_precision": 0.8595347806030265,
-    "macro_recall": 0.8536666666666666,
-    "macro_f1": 0.8553394606639401,
-    "weighted_f1": 0.85533946066394,
+    "accuracy": 0.879,
+    "macro_precision": 0.8792034527855843,
+    "macro_recall": 0.8790000000000001,
+    "macro_f1": 0.8786836458454179,
+    "weighted_f1": 0.8786836458454178,
     "per_class": {
-      "ALCOHOL_SANITIZER": {
-        "precision": 0.9245283018867925,
-        "recall": 0.8166666666666667,
-        "f1": 0.8672566371681416,
+      "SAFE": {
+        "precision": 0.8583196046128501,
+        "recall": 0.8683333333333333,
+        "f1": 0.8632974316487159,
         "support": 2400
       },
-      "AMBIENT_CLEAN": {
-        "precision": 0.8227060653188181,
-        "recall": 0.8816666666666667,
-        "f1": 0.8511665325824618,
-        "support": 2400
-      },
-      "EXPLOSIVE_PROXY": {
-        "precision": 0.9564288765484835,
+      "WEATHER": {
+        "precision": 0.9511469838572643,
         "recall": 0.9329166666666666,
-        "f1": 0.9445264712086058,
+        "f1": 0.941943626419857,
         "support": 2400
       },
-      "NARCOTIC_PROXY": {
-        "precision": 0.8944658944658944,
-        "recall": 0.86875,
-        "f1": 0.8814204185161699,
+      "ALCOHOL": {
+        "precision": 0.8396022481625595,
+        "recall": 0.8091666666666667,
+        "f1": 0.8241035433906216,
         "support": 2400
       },
-      "WEATHER_DRIFT": {
-        "precision": 0.6995447647951442,
-        "recall": 0.7683333333333333,
-        "f1": 0.7323272438443209,
+      "EXPLOSIVE": {
+        "precision": 0.8685934489402698,
+        "recall": 0.9391666666666667,
+        "f1": 0.9025025025025025,
+        "support": 2400
+      },
+      "NARCOTIC": {
+        "precision": 0.8783549783549783,
+        "recall": 0.8454166666666667,
+        "f1": 0.8615711252653928,
         "support": 2400
       }
     },
     "confusion_matrix": [
       [
-        1960,
-        113,
-        11,
-        130,
-        186
-      ],
-      [
-        29,
-        2116,
-        5,
-        5,
-        245
-      ],
-      [
-        1,
-        9,
-        2239,
-        2,
-        149
-      ],
-      [
-        85,
-        11,
-        7,
-        2085,
-        212
-      ],
-      [
-        45,
-        323,
+        2084,
         79,
-        109,
-        1844
+        113,
+        97,
+        27
+      ],
+      [
+        77,
+        2239,
+        5,
+        54,
+        25
+      ],
+      [
+        185,
+        6,
+        1942,
+        93,
+        174
+      ],
+      [
+        60,
+        16,
+        15,
+        2254,
+        55
+      ],
+      [
+        22,
+        14,
+        238,
+        97,
+        2029
       ]
     ]
   },
   "comparison": {
-    "random_forest_accuracy_percent": 83.95,
-    "random_forest_macro_f1_percent": 84.1505636258528,
-    "tinyml_accuracy_percent": 85.36666666666667,
-    "tinyml_macro_f1_percent": 85.53394606639401
+    "random_forest_accuracy_percent": 89.45,
+    "random_forest_macro_f1_percent": 89.49843604658571,
+    "tinyml_accuracy_percent": 87.9,
+    "tinyml_macro_f1_percent": 87.8683645845418
+  },
+  "compensation_ablation": {
+    "without_compensation": {
+      "random_forest": {
+        "accuracy": 0.8410833333333333,
+        "macro_f1": 0.8402363586980728
+      },
+      "tinyml_float32": {
+        "accuracy": 0.81675,
+        "macro_f1": 0.8133644870364896
+      },
+      "same_seed_paired_synthetic_test_condition": true
+    },
+    "with_compensation": {
+      "random_forest": {
+        "accuracy": 0.8945,
+        "macro_f1": 0.8949843604658572
+      },
+      "tinyml_float32": {
+        "accuracy": 0.879,
+        "macro_f1": 0.8786836458454179
+      },
+      "same_seed_paired_synthetic_test_condition": true
+    }
+  },
+  "weather_robustness": {
+    "dry": {
+      "random_forest": {
+        "accuracy": 0.631,
+        "macro_f1": 0.615948630454613
+      },
+      "tinyml_float32": {
+        "accuracy": 0.679,
+        "macro_f1": 0.6798041878062226
+      },
+      "safe_accuracy": 0.96,
+      "weather_accuracy": 0.895
+    },
+    "normal": {
+      "random_forest": {
+        "accuracy": 0.64,
+        "macro_f1": 0.6338053174866326
+      },
+      "tinyml_float32": {
+        "accuracy": 0.742,
+        "macro_f1": 0.7413373131534355
+      },
+      "safe_accuracy": 0.83,
+      "weather_accuracy": 0.87
+    },
+    "humid": {
+      "random_forest": {
+        "accuracy": 0.359,
+        "macro_f1": 0.21604895104895103
+      },
+      "tinyml_float32": {
+        "accuracy": 0.518,
+        "macro_f1": 0.47622434251691637
+      },
+      "safe_accuracy": 0.84,
+      "weather_accuracy": 0.955
+    },
+    "very_humid": {
+      "random_forest": {
+        "accuracy": 0.273,
+        "macro_f1": 0.1664168614227688
+      },
+      "tinyml_float32": {
+        "accuracy": 0.46,
+        "macro_f1": 0.40286327771063146
+      },
+      "safe_accuracy": 0.375,
+      "weather_accuracy": 0.99
+    },
+    "cold": {
+      "random_forest": {
+        "accuracy": 0.562,
+        "macro_f1": 0.5266081583628709
+      },
+      "tinyml_float32": {
+        "accuracy": 0.594,
+        "macro_f1": 0.5701929505874391
+      },
+      "safe_accuracy": 0.965,
+      "weather_accuracy": 0.94
+    },
+    "hot": {
+      "random_forest": {
+        "accuracy": 0.356,
+        "macro_f1": 0.2188708916538152
+      },
+      "tinyml_float32": {
+        "accuracy": 0.548,
+        "macro_f1": 0.517467846199361
+      },
+      "safe_accuracy": 0.825,
+      "weather_accuracy": 0.95
+    },
+    "hot_humid": {
+      "random_forest": {
+        "accuracy": 0.281,
+        "macro_f1": 0.16800200143853394
+      },
+      "tinyml_float32": {
+        "accuracy": 0.451,
+        "macro_f1": 0.39213227830484676
+      },
+      "safe_accuracy": 0.43,
+      "weather_accuracy": 0.975
+    },
+    "hot_dry": {
+      "random_forest": {
+        "accuracy": 0.367,
+        "macro_f1": 0.22433771921484696
+      },
+      "tinyml_float32": {
+        "accuracy": 0.541,
+        "macro_f1": 0.5051549780259851
+      },
+      "safe_accuracy": 0.875,
+      "weather_accuracy": 0.955
+    }
+  },
+  "sensor_and_data_constraints": {
+    "sensor": "DFRobot SEN0567 NH3",
+    "final_test_used_for_training_or_tuning": false,
+    "synthetic_not_laboratory_calibrated": true
   }
 }

@@ -3,11 +3,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 CLASSES = [
-    "ALCOHOL_SANITIZER",
-    "AMBIENT_CLEAN",
-    "EXPLOSIVE_PROXY",
-    "NARCOTIC_PROXY",
-    "WEATHER_DRIFT",
+    "SAFE",
+    "WEATHER",
+    "ALCOHOL",
+    "EXPLOSIVE",
+    "NARCOTIC",
 ]
 
 # Current 12,000-sample internal validation confusion matrices.

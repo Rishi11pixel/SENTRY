@@ -20,18 +20,18 @@ FEATURES = [
     "VMQ2",
     "VMQ3",
     "VMQ135",
-    "VSEN0568",
+    "VSEN0567",
     "dVdt_max",
     "temperature",
     "humidity",
 ]
 
 CLASSES = [
-    "ALCOHOL_SANITIZER",
-    "AMBIENT_CLEAN",
-    "EXPLOSIVE_PROXY",
-    "NARCOTIC_PROXY",
-    "WEATHER_DRIFT",
+    "SAFE",
+    "WEATHER",
+    "ALCOHOL",
+    "EXPLOSIVE",
+    "NARCOTIC",
 ]
 
 
@@ -95,10 +95,12 @@ def main() -> None:
     input_dtype = input_details["dtype"]
     output_dtype = output_details["dtype"]
 
-    input_scale = float(input_details.get("quantization_parameters", {}).get("scale", 0.0))
-    input_zero_point = int(input_details.get("quantization_parameters", {}).get("zero_point", 0))
-    output_scale = float(output_details.get("quantization_parameters", {}).get("scale", 0.0))
-    output_zero_point = int(output_details.get("quantization_parameters", {}).get("zero_point", 0))
+    input_quantization = input_details.get("quantization", (0.0, 0))
+    output_quantization = output_details.get("quantization", (0.0, 0))
+    input_scale = float(input_quantization[0])
+    input_zero_point = int(input_quantization[1])
+    output_scale = float(output_quantization[0])
+    output_zero_point = int(output_quantization[1])
 
     if input_dtype != np.int8:
         raise ValueError(f"Model input dtype is not np.int8: {input_dtype}")

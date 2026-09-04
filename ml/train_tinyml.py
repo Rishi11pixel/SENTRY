@@ -38,10 +38,18 @@ FEATURES = [
     "VMQ2",
     "VMQ3",
     "VMQ135",
-    "VSEN0568",
+    "VSEN0567",
     "dVdt_max",
     "temperature",
     "humidity",
+]
+
+CLASSES = [
+    "SAFE",
+    "WEATHER",
+    "ALCOHOL",
+    "EXPLOSIVE",
+    "NARCOTIC",
 ]
 
 # ============================================================
@@ -58,7 +66,8 @@ y_text = df["label"].values
 # ============================================================
 
 encoder = LabelEncoder()
-y = encoder.fit_transform(y_text)
+encoder.classes_ = np.array(CLASSES)
+y = np.array([CLASSES.index(label) for label in y_text])
 
 print("Classes:")
 
@@ -131,8 +140,15 @@ history = model.fit(
     X_train,
     y_train,
     validation_data=(X_val, y_val),
-    epochs=100,
+    epochs=1,
     batch_size=16,
+    callbacks=[
+        tf.keras.callbacks.EarlyStopping(
+            monitor="val_loss",
+            patience=8,
+            restore_best_weights=True,
+        )
+    ],
     verbose=1,
 )
 
