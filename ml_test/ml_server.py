@@ -79,17 +79,29 @@ for i, label in enumerate(label_classes):
 # ============================================================
 # MODEL TRAINING BASELINES
 # ============================================================
+#
+# These are the baseline values in the model's sensor scale.
+#
+# IMPORTANT:
+# SEN0567 is assumed to already arrive in the same model-space
+# voltage/unit used during training.
+#
+# If SEN0567 arrives as an ADC count from ESP32 instead,
+# this section MUST be changed after confirming its calibration.
+# ============================================================
 
 MODEL_BASELINES = {
     "MQ2": 0.82,
     "MQ3": 0.74,
-    "MQ135": 0.91,
-    "SEN0568": 0.68
+    "MQ135": 0.91
 }
 
 
 # ============================================================
 # REAL ESP32 SENSOR BASELINES
+# ============================================================
+#
+# These are raw ADC baselines from the ESP32.
 # ============================================================
 
 REAL_BASELINES = {
@@ -100,13 +112,39 @@ REAL_BASELINES = {
 
 
 # ============================================================
-# SEN0568
+# ENVIRONMENTAL COMPENSATION COEFFICIENTS
+# ============================================================
+#
+# V_comp = V_raw
+#          - alpha_H * (Humidity - 50)
+#          - alpha_T * (Temperature - 25)
+#
+# Compensation is performed AFTER conversion to model scale
+# and BEFORE dV/dt calculation.
 # ============================================================
 
-# SEN0568 sensor is not currently available
-# so we use the same value used for the model.
+COMPENSATION_COEFFICIENTS = {
 
-VSEN0568_VALUE = 0.68
+    "MQ2": {
+        "alpha_H": 0.0018,
+        "alpha_T": 0.0008
+    },
+
+    "MQ3": {
+        "alpha_H": 0.0014,
+        "alpha_T": 0.0007
+    },
+
+    "MQ135": {
+        "alpha_H": 0.0022,
+        "alpha_T": 0.0009
+    },
+
+    "SEN0567": {
+        "alpha_H": 0.0016,
+        "alpha_T": 0.0008
+    }
+}
 
 
 # ============================================================
@@ -123,11 +161,59 @@ def convert_sensor(raw_value, sensor_name):
         raw_value / real_baseline
     ) * model_baseline
 
-    value = np.clip(
-        value,
-        0.02,
-        3.25
+    return float(value)
+
+
+# ============================================================
+# ENVIRONMENTAL COMPENSATION
+# ============================================================
+
+def compensate_sensor(
+    raw_model_value,
+    temperature,
+    humidity,
+    sensor_name
+):
+
+    alpha_H = (
+        COMPENSATION_COEFFICIENTS[
+            sensor_name
+        ]["alpha_H"]
     )
+
+    alpha_T = (
+        COMPENSATION_COEFFICIENTS[
+            sensor_name
+        ]["alpha_T"]
+    )
+
+    compensated_value = (
+        raw_model_value
+        - alpha_H * (humidity - 50.0)
+        - alpha_T * (temperature - 25.0)
+    )
+
+    return float(compensated_value)
+
+
+# ============================================================
+# SEN0567 CONVERSION
+# ============================================================
+#
+# IMPORTANT ASSUMPTION:
+#
+# The ESP32 sends SEN0567 in the same voltage/model-space
+# expected by the trained model.
+#
+# Example:
+#
+#     "sen0567": 0.68
+#
+# If your ESP32 instead sends an ADC count, DO NOT use this
+# function as-is. We need the SEN0567 real baseline first.
+# ============================================================
+
+def convert_sen0567(value):
 
     return float(value)
 
@@ -138,6 +224,10 @@ def convert_sensor(raw_value, sensor_name):
 
 def extract_features(readings):
 
+    # --------------------------------------------------------
+    # EXACTLY 30 READINGS
+    # --------------------------------------------------------
+
     if len(readings) != 30:
 
         raise ValueError(
@@ -145,97 +235,219 @@ def extract_features(readings):
         )
 
 
-    # --------------------------------------------------------
+    # ========================================================
     # RAW SENSOR ARRAYS
-    # --------------------------------------------------------
+    # ========================================================
 
     mq2 = np.array(
-        [float(r["mq2"]) for r in readings],
+        [
+            float(r["mq2"])
+            for r in readings
+        ],
         dtype=float
     )
+
 
     mq3 = np.array(
-        [float(r["mq3"]) for r in readings],
+        [
+            float(r["mq3"])
+            for r in readings
+        ],
         dtype=float
     )
+
 
     mq135 = np.array(
-        [float(r["mq135"]) for r in readings],
+        [
+            float(r["mq135"])
+            for r in readings
+        ],
         dtype=float
     )
+
+
+    sen0567 = np.array(
+        [
+            float(r["sen0567"])
+            for r in readings
+        ],
+        dtype=float
+    )
+
 
     temperature = np.array(
-        [float(r["temperature"]) for r in readings],
+        [
+            float(r["temperature"])
+            for r in readings
+        ],
         dtype=float
     )
+
 
     humidity = np.array(
-        [float(r["humidity"]) for r in readings],
+        [
+            float(r["humidity"])
+            for r in readings
+        ],
         dtype=float
     )
 
 
-    # --------------------------------------------------------
-    # CONVERT SENSOR VALUES TO MODEL SCALE
-    # --------------------------------------------------------
+    # ========================================================
+    # CONVERT MQ SENSORS TO MODEL SCALE
+    # ========================================================
 
-    vmq2 = np.array(
+    vmq2_raw = np.array(
         [
             convert_sensor(x, "MQ2")
             for x in mq2
-        ]
+        ],
+        dtype=float
     )
 
-    vmq3 = np.array(
+
+    vmq3_raw = np.array(
         [
             convert_sensor(x, "MQ3")
             for x in mq3
-        ]
+        ],
+        dtype=float
     )
 
-    vmq135 = np.array(
+
+    vmq135_raw = np.array(
         [
             convert_sensor(x, "MQ135")
             for x in mq135
-        ]
+        ],
+        dtype=float
     )
 
 
-    # --------------------------------------------------------
-    # SEN0568
-    # --------------------------------------------------------
+    # ========================================================
+    # SEN0567
+    # ========================================================
 
-    vsen0568 = np.full(
-        len(readings),
-        VSEN0568_VALUE
+    vsen0567_raw = np.array(
+        [
+            convert_sen0567(x)
+            for x in sen0567
+        ],
+        dtype=float
     )
 
 
-    # --------------------------------------------------------
+    # ========================================================
+    # ENVIRONMENTAL COMPENSATION
+    # ========================================================
+    #
+    # IMPORTANT:
+    #
+    # Compensation happens BEFORE dV/dt.
+    #
+    # Each sensor is compensated using the temperature and
+    # humidity corresponding to the same reading.
+    # ========================================================
+
+    vmq2 = np.array(
+        [
+            compensate_sensor(
+                vmq2_raw[i],
+                temperature[i],
+                humidity[i],
+                "MQ2"
+            )
+            for i in range(len(readings))
+        ],
+        dtype=float
+    )
+
+
+    vmq3 = np.array(
+        [
+            compensate_sensor(
+                vmq3_raw[i],
+                temperature[i],
+                humidity[i],
+                "MQ3"
+            )
+            for i in range(len(readings))
+        ],
+        dtype=float
+    )
+
+
+    vmq135 = np.array(
+        [
+            compensate_sensor(
+                vmq135_raw[i],
+                temperature[i],
+                humidity[i],
+                "MQ135"
+            )
+            for i in range(len(readings))
+        ],
+        dtype=float
+    )
+
+
+    vsen0567 = np.array(
+        [
+            compensate_sensor(
+                vsen0567_raw[i],
+                temperature[i],
+                humidity[i],
+                "SEN0567"
+            )
+            for i in range(len(readings))
+        ],
+        dtype=float
+    )
+
+
+    # ========================================================
     # SENSOR MATRIX
-    # --------------------------------------------------------
+    # ========================================================
 
     sensor_matrix = np.column_stack(
         (
             vmq2,
             vmq3,
             vmq135,
-            vsen0568
+            vsen0567
         )
     )
 
 
-    # --------------------------------------------------------
+    # ========================================================
     # dV/dt
+    # ========================================================
     #
-    # Sensor readings arrive every 0.1 seconds.
-    # --------------------------------------------------------
+    # SENSOR SAMPLING:
+    #
+    # Reading 1 -> 0.0 s
+    # Reading 2 -> 0.1 s
+    # Reading 3 -> 0.2 s
+    # Reading 4 -> 0.3 s
+    #
+    # The trained pipeline uses ONLY THESE FIRST FOUR
+    # readings to calculate the maximum absolute slope.
+    #
+    # Therefore:
+    #
+    # np.diff(sensor_matrix[:4])
+    #
+    # produces 3 slope intervals:
+    #
+    # 0.0 -> 0.1 s
+    # 0.1 -> 0.2 s
+    # 0.2 -> 0.3 s
+    #
+    # DO NOT calculate dV/dt over all 30 readings.
+    # ========================================================
 
     dt = 0.1
 
-
-    # Use first four readings exactly as in
-    # the existing implementation.
 
     early_slopes = (
         np.diff(
@@ -245,6 +457,15 @@ def extract_features(readings):
     )
 
 
+    # Maximum absolute slope across:
+    #
+    # - MQ2
+    # - MQ3
+    # - MQ135
+    # - SEN0567
+    #
+    # and across the three initial time intervals.
+
     dVdt_max = float(
         np.max(
             np.abs(early_slopes)
@@ -252,56 +473,70 @@ def extract_features(readings):
     )
 
 
-    # --------------------------------------------------------
+    # ========================================================
     # FINAL SENSOR VALUES
+    # ========================================================
     #
-    # Average of the last 5 readings.
-    # --------------------------------------------------------
+    # Use the LAST 5 readings.
+    #
+    # 5 readings × 0.1 s = 0.5-second final averaging window.
+    # ========================================================
 
     VMQ2 = float(
         np.mean(vmq2[-5:])
     )
 
+
     VMQ3 = float(
         np.mean(vmq3[-5:])
     )
+
 
     VMQ135 = float(
         np.mean(vmq135[-5:])
     )
 
-    VSEN0568 = float(
-        np.mean(vsen0568[-5:])
+
+    VSEN0567 = float(
+        np.mean(vsen0567[-5:])
     )
 
 
-    # --------------------------------------------------------
-    # TEMPERATURE / HUMIDITY
-    # --------------------------------------------------------
+    # ========================================================
+    # FINAL TEMPERATURE / HUMIDITY
+    # ========================================================
 
     temperature_mean = float(
         np.mean(temperature[-5:])
     )
+
 
     humidity_mean = float(
         np.mean(humidity[-5:])
     )
 
 
-    # --------------------------------------------------------
-    # FEATURE VECTOR
+    # ========================================================
+    # FINAL 7-FEATURE VECTOR
+    # ========================================================
     #
-    # IMPORTANT:
-    # Keep exactly the same feature order used
-    # during ML model training.
-    # --------------------------------------------------------
+    # MUST remain in exactly this order:
+    #
+    # [VMQ2,
+    #  VMQ3,
+    #  VMQ135,
+    #  VSEN0567,
+    #  dVdt_max,
+    #  temperature,
+    #  humidity]
+    # ========================================================
 
     features = np.array(
         [
             VMQ2,
             VMQ3,
             VMQ135,
-            VSEN0568,
+            VSEN0567,
             dVdt_max,
             temperature_mean,
             humidity_mean
@@ -320,10 +555,7 @@ def extract_features(readings):
 def predict(features):
 
     # --------------------------------------------------------
-    # STANDARD SCALER
-    #
-    # This is only preprocessing.
-    # It does NOT modify the model's output confidence.
+    # STANDARD SCALING
     # --------------------------------------------------------
 
     scaled_features = (
@@ -331,14 +563,13 @@ def predict(features):
     ) / scaler_scale
 
 
-    scaled_features = scaled_features.reshape(
-        1,
-        -1
+    scaled_features = (
+        scaled_features.reshape(1, -1)
     )
 
 
     # --------------------------------------------------------
-    # ACTUAL TRAINED ML MODEL
+    # TRAINED KERAS MODEL
     # --------------------------------------------------------
 
     probabilities = model.predict(
@@ -348,7 +579,7 @@ def predict(features):
 
 
     # --------------------------------------------------------
-    # SELECT HIGHEST-PROBABILITY CLASS
+    # HIGHEST PROBABILITY CLASS
     # --------------------------------------------------------
 
     prediction_index = int(
@@ -364,9 +595,7 @@ def predict(features):
     # --------------------------------------------------------
     # MODEL CONFIDENCE
     #
-    # THIS VALUE COMES DIRECTLY FROM THE ML MODEL.
-    #
-    # DO NOT MODIFY IT.
+    # Directly from model output.
     # --------------------------------------------------------
 
     confidence = float(
@@ -379,8 +608,10 @@ def predict(features):
     # --------------------------------------------------------
 
     probability_dict = {
+
         str(label_classes[i]):
         float(probabilities[i])
+
         for i in range(
             len(label_classes)
         )
@@ -406,9 +637,9 @@ def predict_endpoint():
 
     try:
 
-        # ----------------------------------------------------
+        # ====================================================
         # RECEIVE JSON
-        # ----------------------------------------------------
+        # ====================================================
 
         data = request.get_json()
 
@@ -421,9 +652,9 @@ def predict_endpoint():
             }), 400
 
 
-        # ----------------------------------------------------
-        # GET SENSOR READINGS
-        # ----------------------------------------------------
+        # ====================================================
+        # GET READINGS
+        # ====================================================
 
         readings = data.get(
             "readings"
@@ -438,33 +669,35 @@ def predict_endpoint():
             }), 400
 
 
-        # ----------------------------------------------------
-        # EXACTLY 30 READINGS REQUIRED
-        # ----------------------------------------------------
+        # ====================================================
+        # REQUIRE 30 READINGS
+        # ====================================================
 
         if len(readings) != 30:
 
             return jsonify({
+
                 "error":
                 (
                     f"Expected 30 readings, "
                     f"received {len(readings)}"
                 )
+
             }), 400
 
 
-        # ----------------------------------------------------
+        # ====================================================
         # FEATURE EXTRACTION
-        # ----------------------------------------------------
+        # ====================================================
 
         features = extract_features(
             readings
         )
 
 
-        # ----------------------------------------------------
+        # ====================================================
         # ML PREDICTION
-        # ----------------------------------------------------
+        # ====================================================
 
         (
             prediction,
@@ -473,24 +706,25 @@ def predict_endpoint():
         ) = predict(features)
 
 
-        # ----------------------------------------------------
-        # SYSTEM STATUS
+        # ====================================================
+        # APPLICATION STATUS
+        # ====================================================
         #
-        # IMPORTANT:
+        # SAFE environmental classes:
         #
-        # This does NOT change:
-        #   - ML prediction
-        #   - ML confidence
-        #   - ML probabilities
+        #   SAFE
+        #   WEATHER
         #
-        # It ONLY decides whether the application
-        # displays SAFE or ALERT.
-        # ----------------------------------------------------
+        # Everything else is treated as ALERT.
+        #
+        # This does NOT modify ML confidence or probabilities.
+        # ====================================================
 
         if prediction in [
+            "SAFE",
+            "WEATHER",
             "AMBIENT_CLEAN",
-            "WEATHER_DRIFT",
-            "WEATHER"
+            "WEATHER_DRIFT"
         ]:
 
             system_status = "SAFE"
@@ -500,9 +734,9 @@ def predict_endpoint():
             system_status = "ALERT"
 
 
-        # ----------------------------------------------------
+        # ====================================================
         # RESPONSE
-        # ----------------------------------------------------
+        # ====================================================
 
         response = {
 
@@ -541,7 +775,7 @@ def predict_endpoint():
                         5
                     ),
 
-                "VSEN0568":
+                "VSEN0567":
                     round(
                         float(features[3]),
                         5
@@ -568,9 +802,9 @@ def predict_endpoint():
         }
 
 
-        # ----------------------------------------------------
+        # ====================================================
         # TERMINAL OUTPUT
-        # ----------------------------------------------------
+        # ====================================================
 
         print()
         print("=" * 40)
@@ -578,15 +812,18 @@ def predict_endpoint():
         print("=" * 40)
 
         print(
-            f"System Status : {system_status}"
+            f"System Status : "
+            f"{system_status}"
         )
 
         print(
-            f"Prediction    : {prediction}"
+            f"Prediction    : "
+            f"{prediction}"
         )
 
         print(
-            f"Confidence    : {confidence:.4f}"
+            f"Confidence    : "
+            f"{confidence:.4f}"
         )
 
         print()
@@ -608,8 +845,8 @@ def predict_endpoint():
         )
 
         print(
-            f"  VSEN0568    : "
-            f"{features[3]:.2f}"
+            f"  VSEN0567    : "
+            f"{features[3]:.5f}"
         )
 
         print(
@@ -630,7 +867,9 @@ def predict_endpoint():
         print("=" * 40)
 
 
-        return jsonify(response)
+        return jsonify(
+            response
+        )
 
 
     except Exception as e:
@@ -642,7 +881,10 @@ def predict_endpoint():
         )
 
         return jsonify({
-            "error": str(e)
+
+            "error":
+                str(e)
+
         }), 500
 
 
@@ -679,7 +921,8 @@ if __name__ == "__main__":
     print("=" * 40)
 
     print(
-        "Server: http://127.0.0.1:5000"
+        "Server: "
+        "http://127.0.0.1:5000"
     )
 
     print("=" * 40)

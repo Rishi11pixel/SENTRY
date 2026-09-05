@@ -8,10 +8,12 @@ import time
 # ============================================================
 
 SERVER_URL = "http://127.0.0.1:5000/predict"
-
 READINGS_FILE = "sensor_readings.txt"
-
 WAIT_TIME = 3
+
+# Temporary assumption:
+# SEN0567 is currently assumed to be in model-space units.
+SEN0567_VALUE = 0.68
 
 
 # ============================================================
@@ -31,13 +33,16 @@ def load_readings():
         text = file.read()
 
 
+    # --------------------------------------------------------
     # Match every sensor-reading block in the TXT file.
+    # --------------------------------------------------------
+
     pattern = re.compile(
         r"Temperature:\s*([-+]?\d+(?:\.\d+)?)\s*C\s*"
         r"Humidity:\s*([-+]?\d+(?:\.\d+)?)\s*%\s*"
-        r"MQ-2 \(Gas\):\s*(\d+)\s*"
-        r"MQ-3 \(Flying-Fish\):\s*(\d+)\s*"
-        r"MQ-135 \(Air Quality\):\s*(\d+)",
+        r"MQ-2\s*\(Gas\):\s*(\d+)\s*"
+        r"MQ-3\s*\(Flying-Fish\):\s*(\d+)\s*"
+        r"MQ-135\s*\(Air Quality\):\s*(\d+)",
         re.MULTILINE
     )
 
@@ -73,7 +78,12 @@ def load_readings():
 
             "mq3": mq3,
 
-            "mq135": mq135
+            "mq135": mq135,
+
+            # ------------------------------------------------
+            # TEMPORARY SEN0567 VALUE
+            # ------------------------------------------------
+            "sen0567": SEN0567_VALUE
         })
 
 
@@ -84,17 +94,24 @@ def load_readings():
 # SEND ONE 3-SECOND WINDOW
 # ============================================================
 
-def send_window(window, window_number):
+def send_window(
+    window,
+    window_number
+):
 
     payload = {
 
-        "device_id": "SENTRY-01",
+        "device_id":
+            "SENTRY-01",
 
-        "readings": window
+        "readings":
+            window
     }
 
 
-    print("\n========================================")
+    print(
+        "\n========================================"
+    )
 
     print(
         f"SENDING WINDOW #{window_number}"
@@ -112,22 +129,38 @@ def send_window(window, window_number):
         f"{window[-1]['timestamp']:.1f}s"
     )
 
-    print("========================================")
+    print(
+        "========================================"
+    )
 
 
-    # Print the actual sensor values being sent
+    # ========================================================
+    # PRINT ACTUAL SENSOR VALUES
+    # ========================================================
 
-    print("\nSensor data being sent:")
+    print(
+        "\nSensor data being sent:"
+    )
+
 
     for i, reading in enumerate(window):
 
         print(
+
             f"{i+1:02d} | "
+
             f"T={reading['temperature']:.2f} C | "
+
             f"H={reading['humidity']:.2f}% | "
+
             f"MQ2={reading['mq2']:.0f} | "
+
             f"MQ3={reading['mq3']:.0f} | "
-            f"MQ135={reading['mq135']:.0f}"
+
+            f"MQ135={reading['mq135']:.0f} | "
+
+            f"SEN0567={reading['sen0567']:.2f}"
+
         )
 
 
@@ -147,11 +180,30 @@ def send_window(window, window_number):
         )
 
 
-        print("\nHTTP STATUS:")
+        print(
+            "\nHTTP STATUS:"
+        )
 
         print(
             response.status_code
         )
+
+
+        # ====================================================
+        # SHOW SERVER ERROR IF HTTP 500
+        # ====================================================
+
+        if response.status_code != 200:
+
+            print(
+                "\nSERVER ERROR RESPONSE:"
+            )
+
+            print(
+                response.text
+            )
+
+            return False
 
 
         result = response.json()
@@ -161,44 +213,86 @@ def send_window(window, window_number):
         # MODEL RESPONSE
         # ====================================================
 
-        print("\n========== MODEL RESPONSE ==========")
+        print(
+            "\n========== MODEL RESPONSE =========="
+        )
+
 
         print(
+
             "Prediction:",
-            result.get("prediction")
+
+            result.get(
+                "prediction"
+            )
+
         )
+
 
         print(
+
             "Confidence:",
-            result.get("confidence")
+
+            result.get(
+                "confidence"
+            )
+
         )
 
 
-        print("\nProbabilities:")
+        # ====================================================
+        # PROBABILITIES
+        # ====================================================
 
-        for label, probability in result.get(
+        print(
+            "\nProbabilities:"
+        )
+
+
+        for (
+            label,
+            probability
+        ) in result.get(
             "probabilities",
             {}
         ).items():
 
             print(
-                f"  {label}: {probability}"
+
+                f"  {label}: "
+                f"{probability}"
+
             )
 
 
-        print("\nFeatures sent to model:")
+        # ====================================================
+        # FEATURES
+        # ====================================================
 
-        for name, value in result.get(
+        print(
+            "\nFeatures sent to model:"
+        )
+
+
+        for (
+            name,
+            value
+        ) in result.get(
             "features",
             {}
         ).items():
 
             print(
-                f"  {name}: {value}"
+
+                f"  {name}: "
+                f"{value}"
+
             )
 
 
-        print("====================================")
+        print(
+            "===================================="
+        )
 
 
     except requests.exceptions.ConnectionError:
@@ -233,59 +327,67 @@ def send_window(window, window_number):
 
 def main():
 
-    print("\n========================================")
+    print(
+        "\n========================================"
+    )
 
     print(
         "       SENTRY SENSOR → ML"
     )
 
-    print("========================================")
+    print(
+        "========================================"
+    )
 
 
-    # --------------------------------------------------------
+    # ========================================================
     # LOAD EVERYTHING FROM TXT
-    # --------------------------------------------------------
+    # ========================================================
 
     readings = load_readings()
 
 
     print(
+
         f"\nTotal sensor readings found: "
         f"{len(readings)}"
+
     )
 
 
     if len(readings) < 30:
 
         print(
+
             "ERROR: TXT file contains fewer "
             "than 30 readings."
+
         )
 
         return
 
 
-    # --------------------------------------------------------
-    # 30 samples = 3 seconds
-    #
-    # 0.0
-    # 0.1
-    # ...
-    # 2.9
-    # --------------------------------------------------------
+    # ========================================================
+    # CREATE 30-SAMPLE WINDOWS
+    # ========================================================
 
     windows = []
 
 
     for i in range(
+
         0,
+
         len(readings) - 29,
+
         30
+
     ):
 
         window = readings[
             i:i + 30
         ]
+
 
         windows.append(
             window
@@ -293,8 +395,10 @@ def main():
 
 
     print(
+
         f"Complete 3-second windows: "
         f"{len(windows)}"
+
     )
 
 
@@ -303,19 +407,31 @@ def main():
     )
 
 
-    # --------------------------------------------------------
+    # ========================================================
     # SEND EVERY WINDOW
-    # --------------------------------------------------------
+    # ========================================================
 
-    for window_number, window in enumerate(
+    for (
+
+        window_number,
+
+        window
+
+    ) in enumerate(
+
         windows,
+
         start=1
+
     ):
 
 
         success = send_window(
+
             window,
+
             window_number
+
         )
 
 
@@ -328,16 +444,24 @@ def main():
             break
 
 
-        # ----------------------------------------------------
+        # ====================================================
         # WAIT 3 SECONDS
-        # ----------------------------------------------------
+        # ====================================================
 
-        if window_number < len(windows):
+        if (
+
+            window_number
+            < len(windows)
+
+        ):
 
             print(
+
                 "\nWaiting 3 seconds "
                 "before next request..."
+
             )
+
 
             time.sleep(
                 WAIT_TIME
