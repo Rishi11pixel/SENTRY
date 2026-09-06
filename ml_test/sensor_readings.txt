@@ -1,0 +1,1104 @@
+
+------------------------------------------
+Sample interval: 0.1 s   Timestamp: 0.0 s
+Temperature: 30.50 C   Humidity: 80.80 %
+MQ-2 (Gas): 3058
+MQ-3 (Flying-Fish): 515
+MQ-135 (Air Quality): 1003
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+
+------------------------------------------
+Sample interval: 0.1 s   Timestamp: 0.1 s
+Temperature: 30.55 C   Humidity: 80.72 %
+MQ-2 (Gas): 3061
+MQ-3 (Flying-Fish): 520
+MQ-135 (Air Quality): 1080
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+
+------------------------------------------
+Sample interval: 0.1 s   Timestamp: 0.2 s
+Temperature: 30.60 C   Humidity: 80.64 %
+MQ-2 (Gas): 3045
+MQ-3 (Flying-Fish): 516
+MQ-135 (Air Quality): 1166
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+
+------------------------------------------
+Sample interval: 0.1 s   Timestamp: 0.3 s
+Temperature: 30.65 C   Humidity: 80.56 %
+MQ-2 (Gas): 3041
+MQ-3 (Flying-Fish): 514
+MQ-135 (Air Quality): 1231
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+
+------------------------------------------
+Sample interval: 0.1 s   Timestamp: 0.4 s
+Temperature: 30.70 C   Humidity: 80.48 %
+MQ-2 (Gas): 3051
+MQ-3 (Flying-Fish): 513
+MQ-135 (Air Quality): 1283
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+
+------------------------------------------
+Sample interval: 0.1 s   Timestamp: 0.5 s
+Temperature: 30.75 C   Humidity: 80.40 %
+MQ-2 (Gas): 3040
+MQ-3 (Flying-Fish): 518
+MQ-135 (Air Quality): 1360
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+
+------------------------------------------
+Sample interval: 0.1 s   Timestamp: 0.6 s
+Temperature: 30.80 C   Humidity: 80.32 %
+MQ-2 (Gas): 3054
+MQ-3 (Flying-Fish): 512
+MQ-135 (Air Quality): 1440
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+
+------------------------------------------
+Sample interval: 0.1 s   Timestamp: 0.7 s
+Temperature: 30.85 C   Humidity: 80.24 %
+MQ-2 (Gas): 3044
+MQ-3 (Flying-Fish): 525
+MQ-135 (Air Quality): 1500
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+
+------------------------------------------
+Sample interval: 0.1 s   Timestamp: 0.8 s
+Temperature: 30.90 C   Humidity: 80.16 %
+MQ-2 (Gas): 3052
+MQ-3 (Flying-Fish): 520
+MQ-135 (Air Quality): 1563
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+
+------------------------------------------
+Sample interval: 0.1 s   Timestamp: 0.9 s
+Temperature: 30.95 C   Humidity: 80.08 %
+MQ-2 (Gas): 3062
+MQ-3 (Flying-Fish): 517
+MQ-135 (Air Quality): 1655
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+
+------------------------------------------
+Sample interval: 0.1 s   Timestamp: 1.0 s
+Temperature: 30.85 C   Humidity: 80.30 %
+MQ-2 (Gas): 3068
+MQ-3 (Flying-Fish): 533
+MQ-135 (Air Quality): 1743
+STATUS: UNSAFE! Triggered by: MQ-135 (RED LED ON) | BUZZER ON
+
+------------------------------------------
+Sample interval: 0.1 s   Timestamp: 1.1 s
+Temperature: 30.88 C   Humidity: 80.22 %
+MQ-2 (Gas): 3059
+MQ-3 (Flying-Fish): 529
+MQ-135 (Air Quality): 1915
+STATUS: UNSAFE! Triggered by: MQ-135 (RED LED ON) | BUZZER ON
+
+------------------------------------------
+Sample interval: 0.1 s   Timestamp: 1.2 s
+Temperature: 30.91 C   Humidity: 80.14 %
+MQ-2 (Gas): 3079
+MQ-3 (Flying-Fish): 533
+MQ-135 (Air Quality): 2038
+STATUS: UNSAFE! Triggered by: MQ-135 (RED LED ON) | BUZZER ON
+
+------------------------------------------
+Sample interval: 0.1 s   Timestamp: 1.3 s
+Temperature: 30.94 C   Humidity: 80.06 %
+MQ-2 (Gas): 3057
+MQ-3 (Flying-Fish): 535
+MQ-135 (Air Quality): 2188
+STATUS: UNSAFE! Triggered by: MQ-135 (RED LED ON) | BUZZER ON
+
+------------------------------------------
+Sample interval: 0.1 s   Timestamp: 1.4 s
+Temperature: 30.97 C   Humidity: 79.98 %
+MQ-2 (Gas): 3066
+MQ-3 (Flying-Fish): 534
+MQ-135 (Air Quality): 2354
+STATUS: UNSAFE! Triggered by: MQ-135 (RED LED ON) | BUZZER ON
+
+------------------------------------------
+Sample interval: 0.1 s   Timestamp: 1.5 s
+Temperature: 31.00 C   Humidity: 79.90 %
+MQ-2 (Gas): 3280
+MQ-3 (Flying-Fish): 2448
+MQ-135 (Air Quality): 2589
+STATUS: UNSAFE! Triggered by: MQ-135 (RED LED ON) | BUZZER ON
+
+------------------------------------------
+Sample interval: 0.1 s   Timestamp: 1.6 s
+Temperature: 30.96 C   Humidity: 79.76 %
+MQ-2 (Gas): 3258
+MQ-3 (Flying-Fish): 2418
+MQ-135 (Air Quality): 2481
+STATUS: UNSAFE! Triggered by: MQ-135 (RED LED ON) | BUZZER ON
+
+------------------------------------------
+Sample interval: 0.1 s   Timestamp: 1.7 s
+Temperature: 31.08 C   Humidity: 79.86 %
+MQ-2 (Gas): 3270
+MQ-3 (Flying-Fish): 2387
+MQ-135 (Air Quality): 2542
+STATUS: UNSAFE! Triggered by: MQ-135 (RED LED ON) | BUZZER ON
+
+------------------------------------------
+Sample interval: 0.1 s   Timestamp: 1.8 s
+Temperature: 31.01 C   Humidity: 79.96 %
+MQ-2 (Gas): 3205
+MQ-3 (Flying-Fish): 2434
+MQ-135 (Air Quality): 2508
+STATUS: UNSAFE! Triggered by: MQ-135 (RED LED ON) | BUZZER ON
+
+------------------------------------------
+Sample interval: 0.1 s   Timestamp: 1.9 s
+Temperature: 31.04 C   Humidity: 80.05 %
+MQ-2 (Gas): 3229
+MQ-3 (Flying-Fish): 2460
+MQ-135 (Air Quality): 2475
+STATUS: UNSAFE! Triggered by: MQ-135 (RED LED ON) | BUZZER ON
+
+------------------------------------------
+Sample interval: 0.1 s   Timestamp: 2.0 s
+Temperature: 30.98 C   Humidity: 79.89 %
+MQ-2 (Gas): 3246
+MQ-3 (Flying-Fish): 2370
+MQ-135 (Air Quality): 2544
+STATUS: UNSAFE! Triggered by: MQ-135 (RED LED ON) | BUZZER ON
+
+------------------------------------------
+Sample interval: 0.1 s   Timestamp: 2.1 s
+Temperature: 30.96 C   Humidity: 80.00 %
+MQ-2 (Gas): 3178
+MQ-3 (Flying-Fish): 2161
+MQ-135 (Air Quality): 2247
+STATUS: UNSAFE! Triggered by: MQ-135 (RED LED ON) | BUZZER ON
+
+------------------------------------------
+Sample interval: 0.1 s   Timestamp: 2.2 s
+Temperature: 30.92 C   Humidity: 80.10 %
+MQ-2 (Gas): 3171
+MQ-3 (Flying-Fish): 2054
+MQ-135 (Air Quality): 2084
+STATUS: UNSAFE! Triggered by: MQ-135 (RED LED ON) | BUZZER ON
+
+------------------------------------------
+Sample interval: 0.1 s   Timestamp: 2.3 s
+Temperature: 30.88 C   Humidity: 80.20 %
+MQ-2 (Gas): 3150
+MQ-3 (Flying-Fish): 1915
+MQ-135 (Air Quality): 1940
+STATUS: UNSAFE! Triggered by: MQ-135 (RED LED ON) | BUZZER ON
+
+------------------------------------------
+Sample interval: 0.1 s   Timestamp: 2.4 s
+Temperature: 30.84 C   Humidity: 80.30 %
+MQ-2 (Gas): 3130
+MQ-3 (Flying-Fish): 1788
+MQ-135 (Air Quality): 1795
+STATUS: UNSAFE! Triggered by: MQ-135 (RED LED ON) | BUZZER ON
+
+------------------------------------------
+Sample interval: 0.1 s   Timestamp: 2.5 s
+Temperature: 30.80 C   Humidity: 80.40 %
+MQ-2 (Gas): 3100
+MQ-3 (Flying-Fish): 1649
+MQ-135 (Air Quality): 1654
+STATUS: UNSAFE! Triggered by: MQ-135 (RED LED ON) | BUZZER ON
+
+------------------------------------------
+Sample interval: 0.1 s   Timestamp: 2.6 s
+Temperature: 30.76 C   Humidity: 80.50 %
+MQ-2 (Gas): 3085
+MQ-3 (Flying-Fish): 1534
+MQ-135 (Air Quality): 1520
+STATUS: UNSAFE! Triggered by: MQ-135 (RED LED ON) | BUZZER ON
+
+------------------------------------------
+Sample interval: 0.1 s   Timestamp: 2.7 s
+Temperature: 30.72 C   Humidity: 80.50 %
+MQ-2 (Gas): 3081
+MQ-3 (Flying-Fish): 1392
+MQ-135 (Air Quality): 1344
+STATUS: UNSAFE! Triggered by: MQ-135 (RED LED ON) | BUZZER ON
+
+------------------------------------------
+Sample interval: 0.1 s   Timestamp: 2.8 s
+Temperature: 30.68 C   Humidity: 80.50 %
+MQ-2 (Gas): 3062
+MQ-3 (Flying-Fish): 1255
+MQ-135 (Air Quality): 1183
+STATUS: UNSAFE! Triggered by: MQ-135 (RED LED ON) | BUZZER ON
+
+------------------------------------------
+Sample interval: 0.1 s   Timestamp: 2.9 s
+Temperature: 30.64 C   Humidity: 80.50 %
+MQ-2 (Gas): 3030
+MQ-3 (Flying-Fish): 1141
+MQ-135 (Air Quality): 1032
+STATUS: UNSAFE! Triggered by: MQ-135 (RED LED ON) | BUZZER ON
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.80 %
+MQ-2 (Gas): 3053
+MQ-3 (Flying-Fish): 523
+MQ-135 (Air Quality): 1014
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.80 %
+MQ-2 (Gas): 3053
+MQ-3 (Flying-Fish): 511
+MQ-135 (Air Quality): 1015
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.80 %
+MQ-2 (Gas): 3051
+MQ-3 (Flying-Fish): 511
+MQ-135 (Air Quality): 1018
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.80 %
+MQ-2 (Gas): 3054
+MQ-3 (Flying-Fish): 511
+MQ-135 (Air Quality): 1019
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.80 %
+MQ-2 (Gas): 3050
+MQ-3 (Flying-Fish): 511
+MQ-135 (Air Quality): 1015
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.80 %
+MQ-2 (Gas): 3088
+MQ-3 (Flying-Fish): 511
+MQ-135 (Air Quality): 1022
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.80 %
+MQ-2 (Gas): 3049
+MQ-3 (Flying-Fish): 521
+MQ-135 (Air Quality): 1015
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.80 %
+MQ-2 (Gas): 3051
+MQ-3 (Flying-Fish): 507
+MQ-135 (Air Quality): 1019
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.80 %
+MQ-2 (Gas): 3056
+MQ-3 (Flying-Fish): 525
+MQ-135 (Air Quality): 1018
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.80 %
+MQ-2 (Gas): 3051
+MQ-3 (Flying-Fish): 522
+MQ-135 (Air Quality): 1015
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.80 %
+MQ-2 (Gas): 3053
+MQ-3 (Flying-Fish): 511
+MQ-135 (Air Quality): 1018
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.80 %
+MQ-2 (Gas): 3047
+MQ-3 (Flying-Fish): 511
+MQ-135 (Air Quality): 1018
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.80 %
+MQ-2 (Gas): 3054
+MQ-3 (Flying-Fish): 523
+MQ-135 (Air Quality): 1017
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.80 %
+MQ-2 (Gas): 3044
+MQ-3 (Flying-Fish): 522
+MQ-135 (Air Quality): 1013
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.80 %
+MQ-2 (Gas): 3049
+MQ-3 (Flying-Fish): 523
+MQ-135 (Air Quality): 1011
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.80 %
+MQ-2 (Gas): 3047
+MQ-3 (Flying-Fish): 511
+MQ-135 (Air Quality): 1011
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.80 %
+MQ-2 (Gas): 3045
+MQ-3 (Flying-Fish): 523
+MQ-135 (Air Quality): 1011
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.80 %
+MQ-2 (Gas): 3049
+MQ-3 (Flying-Fish): 511
+MQ-135 (Air Quality): 1015
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.80 %
+MQ-2 (Gas): 3043
+MQ-3 (Flying-Fish): 522
+MQ-135 (Air Quality): 1011
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.80 %
+MQ-2 (Gas): 3043
+MQ-3 (Flying-Fish): 511
+MQ-135 (Air Quality): 1013
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3044
+MQ-3 (Flying-Fish): 522
+MQ-135 (Air Quality): 1012
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3044
+MQ-3 (Flying-Fish): 511
+MQ-135 (Air Quality): 1014
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3049
+MQ-3 (Flying-Fish): 511
+MQ-135 (Air Quality): 1013
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3049
+MQ-3 (Flying-Fish): 511
+MQ-135 (Air Quality): 1017
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3046
+MQ-3 (Flying-Fish): 522
+MQ-135 (Air Quality): 1023
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3047
+MQ-3 (Flying-Fish): 511
+MQ-135 (Air Quality): 1011
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3047
+MQ-3 (Flying-Fish): 511
+MQ-135 (Air Quality): 1013
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3049
+MQ-3 (Flying-Fish): 511
+MQ-135 (Air Quality): 1008
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3043
+MQ-3 (Flying-Fish): 511
+MQ-135 (Air Quality): 1009
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3046
+MQ-3 (Flying-Fish): 511
+MQ-135 (Air Quality): 1008
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3047
+MQ-3 (Flying-Fish): 511
+MQ-135 (Air Quality): 1010
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3046
+MQ-3 (Flying-Fish): 511
+MQ-135 (Air Quality): 1010
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3024
+MQ-3 (Flying-Fish): 511
+MQ-135 (Air Quality): 991
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3042
+MQ-3 (Flying-Fish): 511
+MQ-135 (Air Quality): 1008
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3065
+MQ-3 (Flying-Fish): 511
+MQ-135 (Air Quality): 1008
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3061
+MQ-3 (Flying-Fish): 511
+MQ-135 (Air Quality): 1009
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3056
+MQ-3 (Flying-Fish): 511
+MQ-135 (Air Quality): 1008
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3043
+MQ-3 (Flying-Fish): 607
+MQ-135 (Air Quality): 1008
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3047
+MQ-3 (Flying-Fish): 511
+MQ-135 (Air Quality): 1008
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3087
+MQ-3 (Flying-Fish): 511
+MQ-135 (Air Quality): 1008
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3151
+MQ-3 (Flying-Fish): 511
+MQ-135 (Air Quality): 1008
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3041
+MQ-3 (Flying-Fish): 523
+MQ-135 (Air Quality): 1007
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3045
+MQ-3 (Flying-Fish): 511
+MQ-135 (Air Quality): 1008
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3045
+MQ-3 (Flying-Fish): 523
+MQ-135 (Air Quality): 1008
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3045
+MQ-3 (Flying-Fish): 511
+MQ-135 (Air Quality): 1007
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3043
+MQ-3 (Flying-Fish): 511
+MQ-135 (Air Quality): 1008
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3045
+MQ-3 (Flying-Fish): 511
+MQ-135 (Air Quality): 1009
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3046
+MQ-3 (Flying-Fish): 511
+MQ-135 (Air Quality): 1008
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3043
+MQ-3 (Flying-Fish): 511
+MQ-135 (Air Quality): 1008
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3042
+MQ-3 (Flying-Fish): 511
+MQ-135 (Air Quality): 1009
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3043
+MQ-3 (Flying-Fish): 511
+MQ-135 (Air Quality): 1008
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3043
+MQ-3 (Flying-Fish): 511
+MQ-135 (Air Quality): 1008
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3043
+MQ-3 (Flying-Fish): 511
+MQ-135 (Air Quality): 1009
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3045
+MQ-3 (Flying-Fish): 509
+MQ-135 (Air Quality): 990
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3043
+MQ-3 (Flying-Fish): 511
+MQ-135 (Air Quality): 1012
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3044
+MQ-3 (Flying-Fish): 511
+MQ-135 (Air Quality): 1013
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3045
+MQ-3 (Flying-Fish): 511
+MQ-135 (Air Quality): 1010
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3043
+MQ-3 (Flying-Fish): 507
+MQ-135 (Air Quality): 1013
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3043
+MQ-3 (Flying-Fish): 511
+MQ-135 (Air Quality): 1010
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3042
+MQ-3 (Flying-Fish): 525
+MQ-135 (Air Quality): 1013
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.80 %
+MQ-2 (Gas): 3042
+MQ-3 (Flying-Fish): 509
+MQ-135 (Air Quality): 1011
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.80 %
+MQ-2 (Gas): 3047
+MQ-3 (Flying-Fish): 511
+MQ-135 (Air Quality): 1014
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.80 %
+MQ-2 (Gas): 3047
+MQ-3 (Flying-Fish): 511
+MQ-135 (Air Quality): 1014
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.80 %
+MQ-2 (Gas): 3042
+MQ-3 (Flying-Fish): 511
+MQ-135 (Air Quality): 1011
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.80 %
+MQ-2 (Gas): 3046
+MQ-3 (Flying-Fish): 510
+MQ-135 (Air Quality): 1009
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.80 %
+MQ-2 (Gas): 3042
+MQ-3 (Flying-Fish): 511
+MQ-135 (Air Quality): 1008
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.80 %
+MQ-2 (Gas): 3043
+MQ-3 (Flying-Fish): 509
+MQ-135 (Air Quality): 1008
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.80 %
+MQ-2 (Gas): 3044
+MQ-3 (Flying-Fish): 523
+MQ-135 (Air Quality): 1008
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.80 %
+MQ-2 (Gas): 3043
+MQ-3 (Flying-Fish): 511
+MQ-135 (Air Quality): 1009
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.80 %
+MQ-2 (Gas): 3043
+MQ-3 (Flying-Fish): 523
+MQ-135 (Air Quality): 1057
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.80 %
+MQ-2 (Gas): 3050
+MQ-3 (Flying-Fish): 504
+MQ-135 (Air Quality): 1008
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.80 %
+MQ-2 (Gas): 3043
+MQ-3 (Flying-Fish): 510
+MQ-135 (Air Quality): 1008
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.80 %
+MQ-2 (Gas): 3043
+MQ-3 (Flying-Fish): 587
+MQ-135 (Air Quality): 1007
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.80 %
+MQ-2 (Gas): 3039
+MQ-3 (Flying-Fish): 511
+MQ-135 (Air Quality): 1006
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.80 %
+MQ-2 (Gas): 3042
+MQ-3 (Flying-Fish): 511
+MQ-135 (Air Quality): 1005
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.80 %
+MQ-2 (Gas): 3037
+MQ-3 (Flying-Fish): 509
+MQ-135 (Air Quality): 1002
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.80 %
+MQ-2 (Gas): 3031
+MQ-3 (Flying-Fish): 510
+MQ-135 (Air Quality): 999
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.80 %
+MQ-2 (Gas): 3035
+MQ-3 (Flying-Fish): 507
+MQ-135 (Air Quality): 997
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.80 %
+MQ-2 (Gas): 3037
+MQ-3 (Flying-Fish): 506
+MQ-135 (Air Quality): 998
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.80 %
+MQ-2 (Gas): 3035
+MQ-3 (Flying-Fish): 508
+MQ-135 (Air Quality): 996
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3039
+MQ-3 (Flying-Fish): 509
+MQ-135 (Air Quality): 993
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3037
+MQ-3 (Flying-Fish): 565
+MQ-135 (Air Quality): 1002
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3035
+MQ-3 (Flying-Fish): 511
+MQ-135 (Air Quality): 998
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3033
+MQ-3 (Flying-Fish): 509
+MQ-135 (Air Quality): 996
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3035
+MQ-3 (Flying-Fish): 508
+MQ-135 (Air Quality): 992
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3037
+MQ-3 (Flying-Fish): 510
+MQ-135 (Air Quality): 993
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3031
+MQ-3 (Flying-Fish): 511
+MQ-135 (Air Quality): 990
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3028
+MQ-3 (Flying-Fish): 509
+MQ-135 (Air Quality): 989
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3035
+MQ-3 (Flying-Fish): 510
+MQ-135 (Air Quality): 989
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3035
+MQ-3 (Flying-Fish): 506
+MQ-135 (Air Quality): 992
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3031
+MQ-3 (Flying-Fish): 507
+MQ-135 (Air Quality): 988
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3030
+MQ-3 (Flying-Fish): 509
+MQ-135 (Air Quality): 988
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3026
+MQ-3 (Flying-Fish): 511
+MQ-135 (Air Quality): 986
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3027
+MQ-3 (Flying-Fish): 509
+MQ-135 (Air Quality): 979
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3029
+MQ-3 (Flying-Fish): 507
+MQ-135 (Air Quality): 983
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3033
+MQ-3 (Flying-Fish): 509
+MQ-135 (Air Quality): 988
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3029
+MQ-3 (Flying-Fish): 509
+MQ-135 (Air Quality): 982
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3030
+MQ-3 (Flying-Fish): 509
+MQ-135 (Air Quality): 989
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3031
+MQ-3 (Flying-Fish): 510
+MQ-135 (Air Quality): 987
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.70 %
+MQ-2 (Gas): 3029
+MQ-3 (Flying-Fish): 506
+MQ-135 (Air Quality): 990
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.60 %
+MQ-2 (Gas): 3031
+MQ-3 (Flying-Fish): 506
+MQ-135 (Air Quality): 989
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.60 %
+MQ-2 (Gas): 3030
+MQ-3 (Flying-Fish): 506
+MQ-135 (Air Quality): 990
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.60 %
+MQ-2 (Gas): 3029
+MQ-3 (Flying-Fish): 539
+MQ-135 (Air Quality): 785
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.60 %
+MQ-2 (Gas): 3030
+MQ-3 (Flying-Fish): 506
+MQ-135 (Air Quality): 1020
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.60 %
+MQ-2 (Gas): 3027
+MQ-3 (Flying-Fish): 503
+MQ-135 (Air Quality): 981
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.60 %
+MQ-2 (Gas): 3024
+MQ-3 (Flying-Fish): 508
+MQ-135 (Air Quality): 979
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.60 %
+MQ-2 (Gas): 3033
+MQ-3 (Flying-Fish): 509
+MQ-135 (Air Quality): 985
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
+
+------------------------------------------
+Temperature: 30.50 C   Humidity: 80.60 %
+MQ-2 (Gas): 3026
+MQ-3 (Flying-Fish): 506
+MQ-135 (Air Quality): 986
+STATUS: SAFE. Gas levels within limits. (GREEN LED ON)
+------------------------------------------
