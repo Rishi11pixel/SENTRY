@@ -1,17 +1,15 @@
 import { useState } from "react";
 import { Shield, Eye, EyeOff } from "lucide-react";
 
-interface Props { onLogin: () => void; theme: "dark" | "light"; }
+interface Props { onLogin: () => void; }
 
-export default function Login({ onLogin, theme }: Props) {
+export default function Login({ onLogin }: Props) {
   const [showPass, setShowPass] = useState(false);
   const [railId, setRailId]   = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
-  const dark = theme === "dark";
-
   return (
-    <div className={`min-h-screen flex flex-col md:flex-row ${dark ? "bg-obsidian" : "bg-[#F1EDE3]"}`}>
+    <div className="min-h-screen flex flex-col md:flex-row bg-obsidian">
 
       {/* ─── LEFT PANEL ─── */}
       <div className="relative flex-1 flex flex-col justify-between p-8 md:p-14 overflow-hidden bg-obsidian">
@@ -83,15 +81,15 @@ export default function Login({ onLogin, theme }: Props) {
       </div>
 
       {/* ─── RIGHT PANEL ─── */}
-      <div className={`w-full md:w-[420px] flex flex-col justify-center p-8 md:p-12 relative ${dark ? "bg-charcoal" : "bg-white"}`}>
+      <div className="w-full md:w-[420px] flex flex-col justify-center p-8 md:p-12 relative bg-charcoal">
         {/* thin red top bar */}
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-signal-red"/>
-        <div className={`absolute top-4 right-5 font-mono text-[9px] tracking-widest uppercase ${dark?"text-warm-grey/50":"text-[#6F6A61]/50"}`}>v1.0.0</div>
+        <div className="absolute top-4 right-5 font-mono text-[9px] tracking-widest uppercase text-warm-grey/50">v1.0.0</div>
 
         <div className="max-w-sm w-full mx-auto">
           <div className="mb-8">
-            <div className={`font-display text-[32px] tracking-widest leading-none mb-1 ${dark?"text-ivory":"text-obsidian"}`}>WELCOME TO SENTRY</div>
-            <div className={`font-mono text-[10px] tracking-[.18em] uppercase ${dark?"text-warm-grey":"text-[#6F6A61]"}`}>Railway Security Command Center</div>
+            <div className="font-display text-[32px] tracking-widest leading-none mb-1 text-ivory">WELCOME TO SENTRY</div>
+            <div className="font-mono text-[10px] tracking-[.18em] uppercase text-warm-grey">Railway Security Command Center</div>
             <div className="h-[1px] bg-signal-red w-14 mt-3"/>
           </div>
 
@@ -109,7 +107,7 @@ export default function Login({ onLogin, theme }: Props) {
                 <input type={showPass?"text":"password"} className="input-sentry pr-10"
                   placeholder="Enter password" value={password} onChange={e=>setPassword(e.target.value)}/>
                 <button type="button" onClick={()=>setShowPass(!showPass)}
-                  className={`absolute right-3 top-1/2 -translate-y-1/2 transition-colors ${dark?"text-warm-grey hover:text-brass":"text-[#6F6A61] hover:text-brass"}`}>
+                  className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors text-warm-grey hover:text-brass">
                   {showPass ? <EyeOff className="w-4 h-4"/> : <Eye className="w-4 h-4"/>}
                 </button>
               </div>
@@ -117,11 +115,11 @@ export default function Login({ onLogin, theme }: Props) {
             {/* Remember */}
             <div className="flex items-center gap-3">
               <div onClick={()=>setRemember(!remember)}
-                className={`w-4 h-4 border cursor-pointer flex items-center justify-center flex-shrink-0 transition-all ${remember?"bg-signal-red border-signal-red":dark?"border-warm-grey/30":"border-obsidian/20"}`}>
+                className={`w-4 h-4 border cursor-pointer flex items-center justify-center flex-shrink-0 transition-all ${remember?"bg-signal-red border-signal-red":"border-warm-grey/30"}`}>
                 {remember && <div className="w-2 h-1.5 bg-ivory"/>}
               </div>
               <span onClick={()=>setRemember(!remember)}
-                className={`font-mono text-[10px] tracking-[.15em] uppercase cursor-pointer ${dark?"text-warm-grey":"text-[#6F6A61]"}`}>
+                className="font-mono text-[10px] tracking-[.15em] uppercase cursor-pointer text-warm-grey">
                 REMEMBER THIS DEVICE
               </span>
             </div>
@@ -131,7 +129,7 @@ export default function Login({ onLogin, theme }: Props) {
           </form>
 
           <div className="mt-10 pt-5 border-t border-warm-grey/10 text-center space-y-1">
-            <div className={`font-mono text-[9px] tracking-[.2em] uppercase ${dark?"text-warm-grey/40":"text-[#6F6A61]/50"}`}>SECURE RAILWAY NETWORK</div>
+            <div className="font-mono text-[9px] tracking-[.2em] uppercase text-warm-grey/40">SECURE RAILWAY NETWORK</div>
             <div className="font-mono text-[9px] tracking-[.2em] uppercase text-signal-red">AUTHORIZED PERSONNEL ONLY</div>
           </div>
         </div>

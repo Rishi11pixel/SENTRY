@@ -36,14 +36,11 @@ function ToastBar({ toasts, onDismiss }:{ toasts:Toast[]; onDismiss:(id:number)=
 
 export default function App() {
   const [loggedIn, setLoggedIn]   = useState(false);
-  const [theme, setTheme]         = useState<"dark"|"light">("dark");
   const [screen, setScreen]       = useState<Screen>("dashboard");
   const [devId, setDevId]         = useState("SENTRY-032");
   const [mobileNav, setMobileNav] = useState(false);
   const [toasts, setToasts]       = useState<Toast[]>([]);
   const [toastId, setToastId]     = useState(0);
-
-  const dark = theme==="dark";
 
   function addToast(msg:string, type:Toast["type"]="info", state="SAFE") {
     const id=toastId+1; setToastId(id);
@@ -58,16 +55,14 @@ export default function App() {
   },[loggedIn]);
 
   if(!loggedIn) {
-    return <Login onLogin={()=>setLoggedIn(true)} theme={theme}/>;
+    return <Login onLogin={()=>setLoggedIn(true)} />;
   }
 
   return (
-    <div className={`flex h-screen overflow-hidden ${dark?"bg-obsidian":"bg-[#F1EDE3]"} ${theme}`}>
+    <div className="dark flex h-screen overflow-hidden bg-obsidian">
       <Sidebar
         active={screen}
         onNav={s=>{setScreen(s);setMobileNav(false);}}
-        theme={theme}
-        onTheme={()=>setTheme(t=>t==="dark"?"light":"dark")}
         mobileOpen={mobileNav}
         onMobileToggle={()=>setMobileNav(o=>!o)}
         alertCount={1}
@@ -75,9 +70,9 @@ export default function App() {
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Topbar */}
-        <div className={`flex-shrink-0 flex items-center justify-between px-4 md:px-6 py-2.5 border-b ${dark?"bg-charcoal border-warm-grey/10":"bg-white border-obsidian/8"}`}>
+        <div className="flex-shrink-0 flex items-center justify-between px-4 md:px-6 py-2.5 border-b bg-charcoal border-warm-grey/10">
           <div className="flex items-center gap-3 md:pl-0 pl-12">
-            <div className={`font-mono text-[9.5px] tracking-[.18em] uppercase ${dark?"text-warm-grey":"text-[#6F6A61]"}`}>
+            <div className="font-mono text-[9.5px] tracking-[.18em] uppercase text-warm-grey">
               <span className="text-brass">SENTRY</span> // CONTROL CENTER // NEW DELHI JN
             </div>
           </div>
@@ -87,31 +82,31 @@ export default function App() {
               <span className="w-1.5 h-1.5 rounded-full bg-signal-red blink"/>
               <span className="font-mono text-[8.5px] text-signal-red tracking-widest hidden sm:block">3 ACTIVE ALERTS</span>
             </button>
-            <div className={`font-mono text-[8.5px] tracking-widest hidden sm:block ${dark?"text-warm-grey/50":"text-[#6F6A61]/50"}`}>v1.0.0</div>
+            <div className="font-mono text-[8.5px] tracking-widest hidden sm:block text-warm-grey/50">v1.0.0</div>
           </div>
         </div>
 
         {/* Screen */}
         <div className="flex-1 overflow-y-auto">
           {screen==="dashboard"&&(
-            <Dashboard theme={theme}
+            <Dashboard theme="dark"
               onViewDevice={id=>{setDevId(id);setScreen("device-info");}}
               onViewAnomaly={()=>setScreen("anomalies")}/>
           )}
-          {screen==="live-tracking"&&<LiveTracking theme={theme}/>}
+          {screen==="live-tracking"&&<LiveTracking theme="dark"/>}
           {screen==="device-info"&&(
-            <DeviceInfo deviceId={devId} theme={theme}
+            <DeviceInfo deviceId={devId} theme="dark"
               onBack={()=>setScreen("devices")}
               onLiveTracking={()=>setScreen("live-tracking")}/>
           )}
-          {screen==="devices"&&<Devices theme={theme} onViewDevice={id=>{setDevId(id);setScreen("device-info");}}/>}
+          {screen==="devices"&&<Devices theme="dark" onViewDevice={id=>{setDevId(id);setScreen("device-info");}}/>}
           {screen==="anomalies"&&(
-            <AnomalyAlert theme={theme}
+            <AnomalyAlert theme="dark"
               onAcknowledge={()=>addToast("Issue recognised — RAIL_ADM_001","success","SAFE")}
               onResolved={()=>{ addToast("EXPLOSIVE PROXY resolved — moved to Threat History","success","EXPLOSIVE PROXY"); setScreen("threat-history"); }}/>
           )}
-          {screen==="threat-history"&&<ThreatHistory theme={theme}/>}
-          {screen==="logs"&&<SystemLogs theme={theme}/>}
+          {screen==="threat-history"&&<ThreatHistory theme="dark"/>}
+          {screen==="logs"&&<SystemLogs theme="dark"/>}
         </div>
       </div>
 

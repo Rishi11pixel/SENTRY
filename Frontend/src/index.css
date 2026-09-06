@@ -45,12 +45,6 @@ html, body, #root {
     linear-gradient(90deg, rgba(196,154,74,.04) 1px, transparent 1px);
   background-size: 28px 28px;
 }
-.grid-bg-light {
-  background-image:
-    linear-gradient(rgba(8,9,10,.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(8,9,10,.04) 1px, transparent 1px);
-  background-size: 28px 28px;
-}
 
 /* Dividers */
 .red-divider   { border-top: 1px solid #B3262E; }
@@ -58,7 +52,6 @@ html, body, #root {
 
 /* Panels */
 .panel       { border: 1px solid rgba(196,154,74,.1); }
-.panel-light { border: 1px solid rgba(8,9,10,.1); }
 
 /* Keyframes */
 @keyframes blink       { 0%,100%{opacity:1} 50%{opacity:.15} }
@@ -137,14 +130,6 @@ html, body, #root {
 }
 .input-sentry:focus        { border-color: #C49A4A; }
 .input-sentry::placeholder { color: rgba(168,163,154,.3); }
-
-.light .input-sentry {
-  background: #fff;
-  border-color: rgba(8,9,10,.14);
-  color: #08090A;
-}
-.light .input-sentry::placeholder { color: rgba(111,106,97,.4); }
-.light .input-sentry:focus { border-color: #C49A4A; }
 
 /* Recharts tooltip */
 .recharts-tooltip-wrapper .recharts-default-tooltip {
