@@ -3,7 +3,7 @@ import { Download } from "lucide-react";
 import { LOGS } from "../data";
 
 const DEVICE_KEYWORDS = ["battery","sensor","calibr","connection","temperature","humidity","heartbeat","operator","handover","environmental","noise","firmware"];
-const LC: Record<string, string> = { ALERT:"#B3262E", WARNING:"#D99A27", SUCCESS:"#28734A", INFO:"#C49A4A" };
+const LC: Record<string, string> = { ALERT:"#B3262E", WARNING:"#D99A27", SUCCESS:"#20C878", INFO:"#C49A4A" };
 
 export default function SystemLogs({ theme }: { theme: "dark" | "light" }) {
   const dark  = theme === "dark";
@@ -48,7 +48,7 @@ export default function SystemLogs({ theme }: { theme: "dark" | "light" }) {
             { l: "TOTAL ENTRIES",  v: LOGS.length,                                   c: "#C49A4A" },
             { l: "ALERTS",         v: LOGS.filter(l => l.level === "ALERT").length,   c: "#B3262E" },
             { l: "WARNINGS",       v: LOGS.filter(l => l.level === "WARNING").length, c: "#D99A27" },
-            { l: "SUCCESSFUL OPS", v: LOGS.filter(l => l.level === "SUCCESS").length, c: "#28734A" },
+            { l: "SUCCESSFUL OPS", v: LOGS.filter(l => l.level === "SUCCESS").length, c: "#20C878" },
           ].map(s => (
             <div key={s.l} className={`panel ${cBg} p-3`}>
               <div className={`font-mono text-[8px] tracking-widest ${muted} mb-1`}>{s.l}</div>

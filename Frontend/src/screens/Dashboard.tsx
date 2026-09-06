@@ -2,10 +2,11 @@ import { useState, useEffect } from "react";
 import { Cpu, Wifi, WifiOff, AlertTriangle, Activity, ChevronDown, X, Download } from "lucide-react";
 import { DEVICES, LOGS, INCIDENTS } from "../data";
 import type { Device } from "../data";
+import ThreatIcon from "../components/ThreatIcon";
 
 /* ── helpers ── */
-const STATUS_COLOR: Record<string,string> = { ONLINE:"#28734A", OFFLINE:"#4A4641", ALERT:"#B3262E", WARNING:"#D99A27" };
-const RESULT_COLOR: Record<string,string> = { "SAFE":"#28734A","CAUTION":"#D99A27","EXPLOSIVE PROXY":"#B3262E","NARCOTIC PROXY":"#C49A4A" };
+const STATUS_COLOR: Record<string,string> = { ONLINE:"#20C878", OFFLINE:"#A8A39A", ALERT:"#B3262E", WARNING:"#D99A27" };
+const RESULT_COLOR: Record<string,string> = { "SAFE":"#20C878","CAUTION":"#D99A27","ALCOHOL":"#D99A27","EXPLOSIVE PROXY":"#B3262E","NARCOTIC PROXY":"#B3262E" };
 
 function Badge({ status }: { status: Device["status"] }) {
   const c = STATUS_COLOR[status];
@@ -19,7 +20,7 @@ function Badge({ status }: { status: Device["status"] }) {
 }
 
 function LogStatus({ level }: { level:string }) {
-  const map:Record<string,{c:string}> = { ALERT:{c:"#B3262E"}, WARNING:{c:"#D99A27"}, SUCCESS:{c:"#28734A"}, INFO:{c:"#C49A4A"} };
+  const map:Record<string,{c:string}> = { ALERT:{c:"#B3262E"}, WARNING:{c:"#D99A27"}, SUCCESS:{c:"#20C878"}, INFO:{c:"#C49A4A"} };
   const { c } = map[level]??{c:"#A8A39A"};
   return <span className="font-mono text-[8.5px] tracking-widest px-1.5 py-[3px]" style={{background:`${c}20`,color:c,border:`1px solid ${c}40`}}>{level}</span>;
 }
@@ -99,7 +100,8 @@ function StationMap({ dark, onDevice }:{ dark:boolean; onDevice:(d:Device)=>void
 
       {/* Device markers */}
       {DEVICES.filter(d=>d.status!=="OFFLINE").map(d=>{
-        const c = STATUS_COLOR[d.status];
+        const c = RESULT_COLOR[d.lastResult] || STATUS_COLOR[d.status];
+        const resultColor = RESULT_COLOR[d.lastResult] || c;
         return (
           <button key={d.id} onClick={()=>onDevice(d)}
             className="absolute transform -translate-x-1/2 -translate-y-1/2 group z-10"
@@ -109,12 +111,15 @@ function StationMap({ dark, onDevice }:{ dark:boolean; onDevice:(d:Device)=>void
               {d.status==="ALERT"&&<div className="absolute inset-0 rounded-full pulse-red" style={{background:c,opacity:.5}}/>}
               {d.status==="WARNING"&&<div className="absolute inset-0 rounded-full pulse-amber" style={{background:c,opacity:.4}}/>}
               {d.status==="ONLINE"&&<div className="absolute inset-0 rounded-full pulse-green" style={{background:c,opacity:.3}}/>}
-              <div className="w-3.5 h-3.5 rounded-full border-[2px] border-obsidian relative z-10 transition-transform group-hover:scale-125"
-                style={{background:c, boxShadow:`0 0 8px ${c}80`}}/>
+              <div className="w-7 h-7 rounded-full border-[2px] border-obsidian relative z-10 transition-transform group-hover:scale-125 flex items-center justify-center"
+                style={{background:c, color:resultColor, boxShadow:`0 0 8px ${c}80`}}>
+                <ThreatIcon state={d.lastResult} size={19} className="bg-obsidian/90 rounded-full p-0.5" />
+              </div>
               {/* tooltip */}
               <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 panel ${dark?"bg-gunmetal":"bg-white panel-light"} px-2.5 py-1.5`}>
                 <div className="font-mono text-[9px] tracking-widest" style={{color:c}}>{d.id}</div>
                 <div className={`font-mono text-[8px] ${dark?"text-warm-grey":"text-[#6F6A61]"}`}>{d.location}</div>
+                <div className="font-mono text-[8px] tracking-widest" style={{color:resultColor}}>{d.lastResult}</div>
               </div>
             </div>
           </button>
@@ -123,8 +128,8 @@ function StationMap({ dark, onDevice }:{ dark:boolean; onDevice:(d:Device)=>void
 
       {/* Legend */}
       <div className={`absolute bottom-3 right-3 p-2.5 ${dark?"bg-charcoal/90":"bg-white/90"} border ${dark?"border-warm-grey/10":"border-obsidian/10"}`}>
-        {[["ONLINE","#28734A"],["ALERT","#B3262E"],["WARNING","#D99A27"]].map(([l,c])=>(
-          <div key={l} className="flex items-center gap-1.5 mb-1 last:mb-0">
+        {[["ONLINE","#20C878"],["ALERT","#B3262E"],["WARNING","#D99A27"]].map(([l,c])=>(
+            <div key={l} className="flex items-center gap-1.5 mb-1 last:mb-0">
             <span className="w-2 h-2 rounded-full flex-shrink-0" style={{background:c}}/>
             <span className="font-mono text-[8px] tracking-widest" style={{color:c}}>{l}</span>
           </div>
@@ -136,7 +141,7 @@ function StationMap({ dark, onDevice }:{ dark:boolean; onDevice:(d:Device)=>void
 
 /* ── Device Popup ── */
 function DevicePopup({ d, dark, onClose, onView }:{ d:Device; dark:boolean; onClose:()=>void; onView:()=>void }) {
-  const sc = STATUS_COLOR[d.status];
+  const sc = RESULT_COLOR[d.lastResult] || STATUS_COLOR[d.status];
   const rc = RESULT_COLOR[d.lastResult]||"#A8A39A";
   return (
     <div className={`absolute z-30 w-72 panel shadow-2xl slide-in ${dark?"bg-gunmetal":"bg-white panel-light"}`}
@@ -162,9 +167,12 @@ function DevicePopup({ d, dark, onClose, onView }:{ d:Device; dark:boolean; onCl
         </div>
         {/* Last threat scan */}
         {d.status!=="OFFLINE"&&(
-          <div className={`p-2.5 mb-2 ${d.status==="ALERT"?"bg-signal-red/10 border border-signal-red/30":d.lastResult==="CAUTION"?"bg-caution/10 border border-caution/30":"bg-safe/10 border border-safe/30"}`}>
+          <div className={`p-2.5 mb-2 ${d.status==="ALERT"?"bg-signal-red/10 border border-signal-red/30":d.lastResult==="CAUTION"||d.lastResult==="ALCOHOL"?"bg-caution/10 border border-caution/30":"bg-safe/10 border border-safe/30"}`}>
             <div className={`font-mono text-[7.5px] tracking-widest uppercase mb-0.5 ${dark?"text-warm-grey":"text-[#6F6A61]"}`}>LAST SCAN RESULT</div>
-            <div className="font-heading text-[13px] font-semibold tracking-widest" style={{color:rc}}>{d.lastResult}</div>
+            <div className="flex items-center gap-2" style={{color:rc}}>
+              <ThreatIcon state={d.lastResult} size={34} className="flex-shrink-0" />
+              <div className="font-heading text-[13px] font-semibold tracking-widest">{d.lastResult}</div>
+            </div>
           </div>
         )}
         {/* Confidence + scan time */}
@@ -256,8 +264,8 @@ export default function Dashboard({ theme, onViewDevice, onViewAnomaly }: Props)
         {/* ── Metric cards ── */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
           <MetricCard label="CONNECTED DEVICES" value={24}  desc="Total registered"  dark={dark}/>
-          <MetricCard label="ONLINE"             value={22}  desc="Active right now"  badge="91.6%" badgeColor="#28734A" dark={dark}/>
-          <MetricCard label="OFFLINE"            value={2}   desc="No heartbeat"      badge="↑ 1" badgeColor="#D99A27" trend="up" dark={dark}/>
+          <MetricCard label="ONLINE"             value={22}  desc="Active right now"  badge="91.6%" badgeColor="#20C878" dark={dark}/>
+          <MetricCard label="OFFLINE"            value={2}   desc="No heartbeat"      badge="↑ 1" badgeColor="#A8A39A" trend="up" dark={dark}/>
           <MetricCard label="ACTIVE ALERTS"      value="03"  desc="Require attention" badge="CRITICAL" badgeColor="#B3262E" trend="up" dark={dark}/>
         </div>
 

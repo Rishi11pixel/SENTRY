@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { INCIDENTS } from "../data";
-import { AlertTriangle, CheckCircle } from "lucide-react";
+import ThreatIcon from "../components/ThreatIcon";
 
 type IncStatus = "LIVE" | "RECOGNISED" | "RESOLVED";
 
@@ -14,13 +14,13 @@ const STATUS_MAP: Record<string, IncStatus> = {
 const STATUS_COLOR: Record<IncStatus, string> = {
   LIVE:       "#B3262E",
   RECOGNISED: "#D99A27",
-  RESOLVED:   "#28734A",
+  RESOLVED:   "#20C878",
 };
 
 const GLOW: Record<IncStatus, string> = {
   LIVE:       "0 0 10px #B3262E99, 0 0 24px #B3262E44",
   RECOGNISED: "0 0 10px #D99A2799, 0 0 24px #D99A2744",
-  RESOLVED:   "0 0 10px #28734A99, 0 0 24px #28734A44",
+  RESOLVED:   "0 0 10px #20C87899, 0 0 24px #20C87844",
 };
 
 export default function ThreatHistory({ theme }: { theme: "dark" | "light" }) {
@@ -33,7 +33,7 @@ export default function ThreatHistory({ theme }: { theme: "dark" | "light" }) {
 
   const [filter, setFilter] = useState<"ALL" | IncStatus>("ALL");
 
-  const tc = (t: string) => t.includes("EXPLOSIVE") ? "#B3262E" : "#C49A4A";
+  const tc = (t: string) => t.includes("EXPLOSIVE") || t.includes("NARCOTIC") ? "#B3262E" : "#D99A27";
 
   const items = INCIDENTS.map(inc => ({
     ...inc,
@@ -63,7 +63,7 @@ export default function ThreatHistory({ theme }: { theme: "dark" | "light" }) {
         <div className="grid grid-cols-2 gap-3">
           {([
             { l: "ACTIVE INCIDENTS", v: counts.LIVE,     c: "#B3262E", glow: GLOW.LIVE     },
-            { l: "RESOLVED TODAY",   v: counts.RESOLVED,  c: "#28734A", glow: GLOW.RESOLVED },
+            { l: "RESOLVED TODAY",   v: counts.RESOLVED,  c: "#20C878", glow: GLOW.RESOLVED },
           ] as const).map(s => (
             <div key={s.l} className={`panel ${cBg} p-4 flex flex-col gap-1`}
               style={{ boxShadow: s.v > 0 ? s.glow : undefined }}>
@@ -91,6 +91,7 @@ export default function ThreatHistory({ theme }: { theme: "dark" | "light" }) {
             const st = inc.derivedStatus;
             const sc = STATUS_COLOR[st];
             const isLive = st === "LIVE";
+            const iconStyle = { color: t };
             return (
               <div key={inc.id} className={`panel ${cBg} overflow-hidden`}
                 style={{ borderLeft: `3px solid ${t}`, boxShadow: isLive ? GLOW.LIVE : undefined }}>
@@ -98,9 +99,6 @@ export default function ThreatHistory({ theme }: { theme: "dark" | "light" }) {
                 <div className="p-5">
                   <div className="flex flex-wrap items-center gap-3 mb-3">
                     <div className="flex items-center gap-2">
-                      {isLive
-                        ? <AlertTriangle className="w-4 h-4 text-signal-red blink" />
-                        : <CheckCircle className="w-4 h-4 text-safe" />}
                       <span className={`font-mono text-[9px] ${muted}`}>INCIDENT</span>
                       <span className="font-mono text-[10px] text-brass font-medium">#{inc.id}</span>
                     </div>
@@ -117,8 +115,11 @@ export default function ThreatHistory({ theme }: { theme: "dark" | "light" }) {
                     </span>
                   </div>
 
-                  <div className="font-display text-[28px] tracking-widest leading-none mb-3" style={{ color: t }}>
-                    {inc.type}
+                  <div className="flex items-center gap-3 mb-3" style={{ color: t }}>
+                    <span className="flex-shrink-0" style={iconStyle}>
+                      <ThreatIcon state={inc.type} size={58} />
+                    </span>
+                    <div className="font-display text-[28px] tracking-widest leading-none">{inc.type}</div>
                   </div>
 
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-2">

@@ -40,7 +40,7 @@ export default function Login({ onLogin, theme }: Props) {
           <line x1="560" y1="290" x2="660" y2="290" stroke="#C49A4A" strokeWidth="1" strokeDasharray="4 4"/>
           <text x="610" y="403" textAnchor="middle" fontSize="10" fill="#C49A4A" fontFamily="monospace" letterSpacing="2">SENTRY</text>
           {/* Signal markers */}
-          <circle cx="80"  cy="180" r="12" stroke="#28734A" strokeWidth="2"/>
+          <circle cx="80"  cy="180" r="12" stroke="#20C878" strokeWidth="2"/>
           <circle cx="80"  cy="230" r="12" stroke="#D99A27" strokeWidth="2"/>
           <circle cx="80"  cy="280" r="12" stroke="#B3262E" strokeWidth="2"/>
           <line x1="80" y1="120" x2="80" y2="160" stroke="#A8A39A" strokeWidth="2"/>

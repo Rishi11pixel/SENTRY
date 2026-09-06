@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { ChevronDown, AlertTriangle } from "lucide-react";
 import { DEVICES } from "../data";
+import ThreatIcon from "../components/ThreatIcon";
 
 // Simulated anomaly history — most recent first
 const ANOMALY_HISTORY = [
@@ -18,7 +19,7 @@ const ANOMALY_HISTORY = [
 
 const RESULT_COLOR: Record<string, string> = {
   "EXPLOSIVE PROXY": "#B3262E",
-  "NARCOTIC PROXY": "#C49A4A",
+  "NARCOTIC PROXY": "#B3262E",
 };
 
 export default function LiveTracking({ theme }: { theme: "dark" | "light" }) {
@@ -70,7 +71,7 @@ export default function LiveTracking({ theme }: { theme: "dark" | "light" }) {
             {drop && (
               <div className={`absolute top-full right-0 mt-0.5 z-30 min-w-full border ${bdr} ${cBg} shadow-xl`}>
                 {DEVICES.map(d => {
-                  const c = { ONLINE: "#28734A", OFFLINE: "#4A4641", ALERT: "#B3262E", WARNING: "#D99A27" }[d.status];
+                  const c = { ONLINE: "#20C878", OFFLINE: "#A8A39A", ALERT: "#B3262E", WARNING: "#D99A27" }[d.status];
                   return (
                     <button key={d.id} onClick={() => { setSelId(d.id); setDrop(false); }}
                       className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors
@@ -140,7 +141,7 @@ export default function LiveTracking({ theme }: { theme: "dark" | "light" }) {
               <div className={`absolute bottom-3 left-3 px-3 py-2 ${dark ? "bg-charcoal/90" : "bg-white/90"} border ${bdr}`}>
                 <div className={`font-mono text-[7.5px] tracking-widest uppercase ${muted} mb-1`}>BATTERY</div>
                 <div className="font-mono text-[18px] leading-none font-medium"
-                  style={{ color: device.battery > 50 ? "#28734A" : device.battery > 20 ? "#D99A27" : "#B3262E" }}>
+                  style={{ color: device.battery > 50 ? "#20C878" : device.battery > 20 ? "#D99A27" : "#B3262E" }}>
                   {device.battery > 0 ? `${device.battery}%` : "—"}
                 </div>
               </div>
@@ -158,9 +159,11 @@ export default function LiveTracking({ theme }: { theme: "dark" | "light" }) {
                   <div className="font-mono text-[9px] tracking-[.2em] uppercase text-brass">LAST ANOMALY DETECTED</div>
                 </div>
 
-                <div className="font-display text-[44px] tracking-widest leading-none mb-2"
-                  style={{ color: anomalyColor }}>
-                  {lastAnomaly.result}
+                <div className="flex items-center gap-3 mb-3" style={{ color: anomalyColor }}>
+                  <ThreatIcon state={lastAnomaly.result} size={62} className="flex-shrink-0" />
+                  <div className="font-display text-[44px] tracking-widest leading-none">
+                    {lastAnomaly.result}
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-4 mb-3">
@@ -211,11 +214,14 @@ export default function LiveTracking({ theme }: { theme: "dark" | "light" }) {
                         return (
                           <tr key={i} className={`border-b ${bdr} last:border-0`}>
                             <td className="py-2 font-mono text-[9.5px] text-brass whitespace-nowrap">{a.timestamp}</td>
-                            <td className="py-2 pr-3">
+                              <td className="py-2 pr-3">
+                                <div className="flex items-center gap-2" style={{ color: c }}>
+                                <ThreatIcon state={a.result} size={18} className="flex-shrink-0" />
                               <span className="font-mono text-[8.5px] px-1.5 py-[2px] whitespace-nowrap"
                                 style={{ background: `${c}20`, color: c, border: `1px solid ${c}40` }}>
                                 {a.result}
                               </span>
+                                </div>
                             </td>
                             <td className="py-2 font-mono text-[9.5px]" style={{ color: c }}>
                               {a.confidence}%

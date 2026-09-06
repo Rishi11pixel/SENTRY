@@ -6,7 +6,7 @@ import type { Device } from "../data";
 interface Props { theme: "dark" | "light"; onViewDevice: (id: string) => void; }
 
 const SC: Record<string, string> = {
-  ONLINE:  "#28734A",
+  ONLINE:  "#20C878",
   OFFLINE: "#A8A39A",
   ALERT:   "#B3262E",
   WARNING: "#D99A27",
@@ -19,7 +19,7 @@ function DeviceCard({ d, theme, onClick }: { d: Device; theme: "dark" | "light";
   const text = dark ? "text-ivory"     : "text-obsidian";
   const bdr  = dark ? "border-warm-grey/10" : "border-obsidian/8";
 
-  const battColor = d.battery > 50 ? "#28734A" : d.battery > 20 ? "#D99A27" : "#B3262E";
+  const battColor = d.battery > 50 ? "#20C878" : d.battery > 20 ? "#D99A27" : "#B3262E";
 
   return (
     <button onClick={onClick}

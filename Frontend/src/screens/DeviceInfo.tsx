@@ -1,5 +1,6 @@
 import { ArrowLeft, Battery, Signal, MapPin } from "lucide-react";
 import { DEVICES } from "../data";
+import ThreatIcon from "../components/ThreatIcon";
 
 interface Props { deviceId: string; theme: "dark" | "light"; onBack: () => void; onLiveTracking: () => void; }
 
@@ -30,7 +31,8 @@ const RECENT_ANOMALIES: Record<string, { timestamp: string; result: string; conf
 
 const RC: Record<string, string> = {
   "EXPLOSIVE PROXY": "#B3262E",
-  "NARCOTIC PROXY":  "#C49A4A",
+  "NARCOTIC PROXY":  "#B3262E",
+  "ALCOHOL":         "#D99A27",
 };
 
 export default function DeviceInfo({ deviceId, theme, onBack, onLiveTracking }: Props) {
@@ -44,8 +46,8 @@ export default function DeviceInfo({ deviceId, theme, onBack, onLiveTracking }: 
   const muted= dark ? "text-warm-grey": "text-[#6F6A61]";
   const bdr  = dark ? "border-warm-grey/10" : "border-obsidian/8";
 
-  const sc = { ONLINE: "#28734A", OFFLINE: "#A8A39A", ALERT: "#B3262E", WARNING: "#D99A27" }[device.status];
-  const battColor = device.battery > 50 ? "#28734A" : device.battery > 20 ? "#D99A27" : "#B3262E";
+  const sc = { ONLINE: "#20C878", OFFLINE: "#A8A39A", ALERT: "#B3262E", WARNING: "#D99A27" }[device.status];
+  const battColor = device.battery > 50 ? "#20C878" : device.battery > 20 ? "#D99A27" : "#B3262E";
 
   return (
     <div className={`min-h-full ${bg}`}>
@@ -142,10 +144,13 @@ export default function DeviceInfo({ deviceId, theme, onBack, onLiveTracking }: 
                       <tr key={i} className={`border-b ${bdr} last:border-0`}>
                         <td className="py-2.5 font-mono text-[9.5px] text-brass whitespace-nowrap">{a.timestamp}</td>
                         <td className="py-2.5 pr-4">
-                          <span className="font-mono text-[8.5px] px-1.5 py-[2px] whitespace-nowrap"
-                            style={{ background: `${c}20`, color: c, border: `1px solid ${c}40` }}>
-                            {a.result}
-                          </span>
+                          <div className="flex items-center gap-2" style={{ color: c }}>
+                            <ThreatIcon state={a.result} size={18} className="flex-shrink-0" />
+                            <span className="font-mono text-[8.5px] px-1.5 py-[2px] whitespace-nowrap"
+                              style={{ background: `${c}20`, color: c, border: `1px solid ${c}40` }}>
+                              {a.result}
+                            </span>
+                          </div>
                         </td>
                         <td className="py-2.5 font-mono text-[11px] font-medium" style={{ color: c }}>
                           {a.confidence}%

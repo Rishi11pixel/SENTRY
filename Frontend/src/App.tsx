@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { AlertTriangle, X } from "lucide-react";
+import { X } from "lucide-react";
+import ThreatIcon from "./components/ThreatIcon";
 import Login from "./components/Login";
 import Sidebar from "./components/Sidebar";
 import type { Screen } from "./components/Sidebar";
@@ -12,7 +13,7 @@ import Devices from "./screens/Devices";
 import SystemLogs from "./screens/SystemLogs";
 
 /* ── Toast ── */
-interface Toast { id:number; msg:string; type:"alert"|"info"|"success"; }
+interface Toast { id:number; msg:string; type:"alert"|"info"|"success"; state:string; }
 function ToastBar({ toasts, onDismiss }:{ toasts:Toast[]; onDismiss:(id:number)=>void }) {
   return (
     <div className="fixed top-4 right-4 z-[60] space-y-2 pointer-events-none">
@@ -22,7 +23,7 @@ function ToastBar({ toasts, onDismiss }:{ toasts:Toast[]; onDismiss:(id:number)=
           :t.type==="success"?"bg-safe/90 border-safe/50 text-ivory"
           :"bg-charcoal border-warm-grey/20 text-ivory"
         }`}>
-          <AlertTriangle className="w-4 h-4 flex-shrink-0"/>
+          <ThreatIcon state={t.state} size={28} className="flex-shrink-0" />
           <span className="font-mono text-[10px] tracking-widest flex-1">{t.msg}</span>
           <button onClick={()=>onDismiss(t.id)} className="flex-shrink-0 opacity-70 hover:opacity-100 transition-opacity">
             <X className="w-3.5 h-3.5"/>
@@ -44,15 +45,15 @@ export default function App() {
 
   const dark = theme==="dark";
 
-  function addToast(msg:string, type:Toast["type"]="info") {
+  function addToast(msg:string, type:Toast["type"]="info", state="SAFE") {
     const id=toastId+1; setToastId(id);
-    setToasts(t=>[...t,{id,msg,type}]);
+    setToasts(t=>[...t,{id,msg,type,state}]);
     setTimeout(()=>setToasts(t=>t.filter(x=>x.id!==id)),4500);
   }
 
   useEffect(()=>{
     if(!loggedIn)return;
-    const id=setTimeout(()=>addToast("⚠ ANOMALY DETECTED — SENTRY-032 / ENTRY GATE 2 — EXPLOSIVE PROXY 94%","alert"),2000);
+    const id=setTimeout(()=>addToast("ANOMALY DETECTED — SENTRY-032 / ENTRY GATE 2 — EXPLOSIVE PROXY 94%","alert","EXPLOSIVE PROXY"),2000);
     return ()=>clearTimeout(id);
   },[loggedIn]);
 
@@ -106,8 +107,8 @@ export default function App() {
           {screen==="devices"&&<Devices theme={theme} onViewDevice={id=>{setDevId(id);setScreen("device-info");}}/>}
           {screen==="anomalies"&&(
             <AnomalyAlert theme={theme}
-              onAcknowledge={()=>addToast("Issue recognised — RAIL_ADM_001","success")}
-              onResolved={()=>{ addToast("Incident resolved — moved to Threat History","success"); setScreen("threat-history"); }}/>
+              onAcknowledge={()=>addToast("Issue recognised — RAIL_ADM_001","success","SAFE")}
+              onResolved={()=>{ addToast("EXPLOSIVE PROXY resolved — moved to Threat History","success","EXPLOSIVE PROXY"); setScreen("threat-history"); }}/>
           )}
           {screen==="threat-history"&&<ThreatHistory theme={theme}/>}
           {screen==="logs"&&<SystemLogs theme={theme}/>}

@@ -1,5 +1,5 @@
 export type DeviceStatus = "ONLINE" | "OFFLINE" | "ALERT" | "WARNING";
-export type ScanResult  = "SAFE" | "CAUTION" | "EXPLOSIVE PROXY" | "NARCOTIC PROXY";
+export type ScanResult  = "SAFE" | "CAUTION" | "ALCOHOL" | "EXPLOSIVE PROXY" | "NARCOTIC PROXY";
 export type LogLevel    = "ALERT" | "WARNING" | "SUCCESS" | "INFO";
 
 export interface Device {
@@ -50,6 +50,7 @@ export const DEVICES: Device[] = [
   { id:"SENTRY-032", location:"Entry Gate 2", platform:"Platform 4",   status:"ALERT",    battery:84, signal:92, health:97, lastSync:"14:32:08", operatingTime:"6h 42m", lastResult:"EXPLOSIVE PROXY",confidence:94, mapX:18, mapY:72 },
   { id:"SENTRY-008", location:"Coaching Area", platform:"Coaching Bay", status:"ONLINE",  battery:65, signal:72, health:94, lastSync:"14:31:58", operatingTime:"8h 02m", lastResult:"SAFE",           confidence:99, mapX:82, mapY:58 },
   { id:"SENTRY-019", location:"Entry Gate 1", platform:"Main Entrance", status:"WARNING", battery:31, signal:85, health:91, lastSync:"14:29:44", operatingTime:"9h 11m", lastResult:"CAUTION",        confidence:72, mapX:18, mapY:38 },
+  { id:"SENTRY-027", location:"Platform 2", platform:"Platform 2",     status:"ONLINE",   battery:88, signal:90, health:98, lastSync:"14:31:22", operatingTime:"6h 05m", lastResult:"ALCOHOL",         confidence:86, mapX:76, mapY:78 },
   { id:"SENTRY-041", location:"Waiting Hall", platform:"Ground Floor",  status:"OFFLINE", battery:0,  signal:0,  health:0,  lastSync:"13:42:11", operatingTime:"—",      lastResult:"SAFE",           confidence:0,  mapX:62, mapY:22 },
 ];
 
@@ -105,8 +106,8 @@ export const HEALTH_CHART = [
 ];
 
 export const DETECTION_DIST = [
-  { name:"SAFE",           value:847, color:"#28734A" },
+  { name:"SAFE",           value:847, color:"#20C878" },
   { name:"CAUTION",        value:43,  color:"#D99A27" },
-  { name:"NARCOTIC PROXY", value:12,  color:"#C49A4A" },
+  { name:"NARCOTIC PROXY", value:12,  color:"#B3262E" },
   { name:"EXPLOSIVE PROXY",value:4,   color:"#B3262E" },
 ];

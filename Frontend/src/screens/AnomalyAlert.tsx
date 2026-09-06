@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { AlertTriangle, MapPin, Cpu, CheckCircle, X } from "lucide-react";
+import ThreatIcon from "../components/ThreatIcon";
 
 interface Props {
   theme: "dark" | "light";
@@ -63,9 +64,12 @@ export default function AnomalyAlert({ theme, onAcknowledge, onResolved }: Props
           <div className="p-5 md:p-6">
             <div className="flex flex-col md:flex-row md:items-start gap-6">
               <div className="flex-1">
-                <div className="font-mono text-[9px] tracking-[.22em] uppercase text-signal-red mb-2">⚠ ANOMALY DETECTED</div>
-                <div className="font-display text-[56px] md:text-[72px] tracking-widest leading-[.88] text-signal-red mb-2">
-                  EXPLOSIVE<br />THREAT
+                <div className="font-mono text-[9px] tracking-[.22em] uppercase text-signal-red mb-2">ANOMALY DETECTED</div>
+                <div className="flex items-center gap-4 text-signal-red mb-3">
+                  <ThreatIcon state="EXPLOSIVE" size={76} className="flex-shrink-0" />
+                  <div className="font-display text-[56px] md:text-[72px] tracking-widest leading-[.88]">
+                    EXPLOSIVE<br />THREAT
+                  </div>
                 </div>
                 <div className={`font-mono text-[10px] tracking-widest ${muted} mb-5`}>
                   CONFIDENCE: <span className="text-signal-red font-medium">94%</span>
@@ -107,7 +111,7 @@ export default function AnomalyAlert({ theme, onAcknowledge, onResolved }: Props
                 <div className="absolute" style={{ left: "11%", top: "67%", transform: "translate(-50%,-50%)" }}>
                   <div className="w-5 h-5 rounded-full bg-signal-red border-2 border-ivory pulse-red" />
                 </div>
-                <div className="absolute bottom-2 left-2 font-mono text-[7.5px] text-signal-red tracking-widest">⚠ ALERT LOCATION</div>
+                <div className="absolute bottom-2 left-2 font-mono text-[7.5px] text-signal-red tracking-widest">ALERT LOCATION</div>
               </div>
             </div>
           </div>
@@ -121,7 +125,7 @@ export default function AnomalyAlert({ theme, onAcknowledge, onResolved }: Props
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8">
               {[
                 { l: "DETECTION TYPE",  v: "EXPLOSIVE PROXY",    c: "#B3262E" },
-                { l: "DEVICE STATUS",   v: "ACTIVE",             c: "#28734A" },
+                { l: "DEVICE STATUS",   v: "ACTIVE",             c: "#20C878" },
                 { l: "LOCATION STATUS", v: "RESPONSE REQUIRED",  c: "#B3262E" },
                 { l: "MQ-135 READING",  v: "ELEVATED — 847 ppm", c: "#D99A27" },
                 { l: "MQ-2 READING",    v: "ELEVATED — 634 ppm", c: "#D99A27" },
