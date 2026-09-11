@@ -91,9 +91,9 @@ for i, label in enumerate(label_classes):
 # ============================================================
 
 MODEL_BASELINES = {
-    "MQ2": 0.82,
-    "MQ3": 0.74,
-    "MQ135": 0.91
+    "MQ2": 0.36,
+    "MQ3": 0.39,
+    "MQ135": 0.42
 }
 
 
@@ -205,12 +205,9 @@ def compensate_sensor(
 # The ESP32 sends SEN0567 in the same voltage/model-space
 # expected by the trained model.
 #
-# Example:
-#
-#     "sen0567": 0.68
-#
-# If your ESP32 instead sends an ADC count, DO NOT use this
-# function as-is. We need the SEN0567 real baseline first.
+# The ESP32 value is forwarded in the model-space units used by
+# the training generator. If a future device sends ADC counts,
+# its calibration must be established before changing this function.
 # ============================================================
 
 def convert_sen0567(value):
@@ -507,12 +504,12 @@ def extract_features(readings):
     # ========================================================
 
     temperature_mean = float(
-        np.mean(temperature[-5:])
+        temperature[-1]
     )
 
 
     humidity_mean = float(
-        np.mean(humidity[-5:])
+        humidity[-1]
     )
 
 

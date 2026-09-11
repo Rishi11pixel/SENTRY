@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Cpu, Wifi, WifiOff, AlertTriangle, Activity, ChevronDown, X, Download } from "lucide-react";
-import { DEVICES, LOGS, INCIDENTS } from "../data";
-import type { Device } from "../data";
+import type { Device, Incident, LogEntry } from "../data";
 import ThreatIcon from "../components/ThreatIcon";
 
 /* ── helpers ── */
@@ -52,7 +51,7 @@ function MetricCard({ label, value, desc, badge, badgeColor, trend, dark }:{
 }
 
 /* ── Station Map ── */
-function StationMap({ dark, onDevice }:{ dark:boolean; onDevice:(d:Device)=>void }) {
+function StationMap({ dark, devices, onDevice }:{ dark:boolean; devices:Device[]; onDevice:(d:Device)=>void }) {
   return (
     <div className={`relative w-full h-72 md:h-[340px] overflow-hidden ${dark?"bg-[#0A0B0D]":"bg-[#E0DBD0]"} grid-bg`}>
       {/* SVG station layout */}
@@ -99,7 +98,7 @@ function StationMap({ dark, onDevice }:{ dark:boolean; onDevice:(d:Device)=>void
       </svg>
 
       {/* Device markers */}
-      {DEVICES.filter(d=>d.status!=="OFFLINE").map(d=>{
+      {devices.filter(d=>d.status!=="OFFLINE").map(d=>{
         const c = RESULT_COLOR[d.lastResult] || STATUS_COLOR[d.status];
         const resultColor = RESULT_COLOR[d.lastResult] || c;
         return (
@@ -189,9 +188,17 @@ function DevicePopup({ d, dark, onClose, onView }:{ d:Device; dark:boolean; onCl
 }
 
 /* ── Main component ── */
-interface Props { theme:"dark"|"light"; onViewDevice:(id:string)=>void; onViewAnomaly:()=>void; }
+interface Props {
+  theme:"dark"|"light";
+  devices: Device[];
+  incidents: Incident[];
+  logs: LogEntry[];
+  summary: { connectedDevices:number; online:number; offline:number; activeAlerts:number };
+  onViewDevice:(id:string)=>void;
+  onViewAnomaly:()=>void;
+}
 
-export default function Dashboard({ theme, onViewDevice, onViewAnomaly }: Props) {
+export default function Dashboard({ theme, devices, incidents, logs, summary, onViewDevice, onViewAnomaly }: Props) {
   const dark = theme==="dark";
   const [popup, setPopup]       = useState<Device|null>(null);
   const [logFilter, setLogFilter]= useState("ALL");
@@ -217,10 +224,10 @@ export default function Dashboard({ theme, onViewDevice, onViewAnomaly }: Props)
   const DEVICE_KEYWORDS = ["battery","sensor","calibr","connection","temperature","humidity","heartbeat","operator","handover","environmental","noise","firmware"];
   const filteredLogs =
     logFilter==="ALERTS"
-      ? LOGS.filter(l=>l.level==="ALERT")
+      ? logs.filter(l=>l.level==="ALERT")
       : logFilter==="DEVICES"
-        ? LOGS.filter(l=>DEVICE_KEYWORDS.some(k=>l.event.toLowerCase().includes(k)))
-        : LOGS;
+        ? logs.filter(l=>DEVICE_KEYWORDS.some(k=>l.event.toLowerCase().includes(k)))
+        : logs;
 
   function exportLogs() {
     const header = "TIMESTAMP,DEVICE,EVENT,LOCATION,STATUS\n";
@@ -263,10 +270,10 @@ export default function Dashboard({ theme, onViewDevice, onViewAnomaly }: Props)
 
         {/* ── Metric cards ── */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
-          <MetricCard label="CONNECTED DEVICES" value={24}  desc="Total registered"  dark={dark}/>
-          <MetricCard label="ONLINE"             value={22}  desc="Active right now"  badge="91.6%" badgeColor="#20C878" dark={dark}/>
-          <MetricCard label="OFFLINE"            value={2}   desc="No heartbeat"      badge="↑ 1" badgeColor="#A8A39A" trend="up" dark={dark}/>
-          <MetricCard label="ACTIVE ALERTS"      value="03"  desc="Require attention" badge="CRITICAL" badgeColor="#B3262E" trend="up" dark={dark}/>
+          <MetricCard label="CONNECTED DEVICES" value={summary.connectedDevices} desc="Total registered" dark={dark}/>
+          <MetricCard label="ONLINE" value={summary.online} desc="Active right now" badge={summary.connectedDevices ? `${Math.round(summary.online / summary.connectedDevices * 100)}%` : "0%"} badgeColor="#20C878" dark={dark}/>
+          <MetricCard label="OFFLINE" value={summary.offline} desc="No heartbeat" badge={summary.offline ? "ATTENTION" : "CLEAR"} badgeColor="#A8A39A" trend={summary.offline ? "up" : "flat"} dark={dark}/>
+          <MetricCard label="ACTIVE ALERTS" value={String(summary.activeAlerts).padStart(2, "0")} desc="Require attention" badge={summary.activeAlerts ? "CRITICAL" : "CLEAR"} badgeColor="#B3262E" trend={summary.activeAlerts ? "up" : "flat"} dark={dark}/>
         </div>
 
         {/* ── Station Map ── */}
@@ -282,13 +289,13 @@ export default function Dashboard({ theme, onViewDevice, onViewAnomaly }: Props)
             </span>
           </div>
           <div className="relative">
-            <StationMap dark={dark} onDevice={setPopup}/>
+            <StationMap dark={dark} devices={devices} onDevice={setPopup}/>
             {popup&&<DevicePopup d={popup} dark={dark} onClose={()=>setPopup(null)} onView={()=>{onViewDevice(popup.id);setPopup(null);}}/>}
           </div>
           {/* device list row */}
           <div className={`px-4 py-3 border-t ${bdr}`}>
             <div className="flex flex-wrap gap-2">
-              {DEVICES.filter(d=>d.status!=="OFFLINE").map(d=>(
+              {devices.filter(d=>d.status!=="OFFLINE").map(d=>(
                 <button key={d.id} onClick={()=>d.status==="ALERT"?onViewAnomaly():onViewDevice(d.id)}
                   className={`flex items-center gap-2 px-3 py-1.5 border ${bdr} ${dark?"hover:bg-charcoal":"hover:bg-[#F4F0E8]"} transition-colors`}>
                   <span className="w-2 h-2 rounded-full flex-shrink-0" style={{background:STATUS_COLOR[d.status]}}/>
@@ -301,16 +308,16 @@ export default function Dashboard({ theme, onViewDevice, onViewAnomaly }: Props)
         </div>
 
         {/* ── Incident banner ── */}
-        {INCIDENTS.filter(i=>i.status!=="RESOLVED").length>0&&(
+        {incidents.filter(i=>i.status!=="RESOLVED").length>0&&(
           <div className="border border-signal-red/35 bg-signal-red/5 p-4 fade-up">
             <div className="flex items-center gap-2.5 mb-3">
               <AlertTriangle className="w-4 h-4 text-signal-red flex-shrink-0"/>
               <span className="font-heading text-[12px] tracking-[.14em] font-semibold text-signal-red">ACTIVE INCIDENTS</span>
               <span className="ml-auto font-mono text-[8.5px] text-signal-red border border-signal-red/30 px-2 py-0.5 blink">
-                {INCIDENTS.filter(i=>i.status!=="RESOLVED").length} ACTIVE
+                {incidents.filter(i=>i.status!=="RESOLVED").length} ACTIVE
               </span>
             </div>
-            {INCIDENTS.filter(i=>i.status!=="RESOLVED").map(inc=>(
+            {incidents.filter(i=>i.status!=="RESOLVED").map(inc=>(
               <div key={inc.id} className={`flex items-center gap-3 px-3 py-2 mb-2 last:mb-0 ${dark?"bg-charcoal":"bg-white"} border-l-2 border-l-signal-red`}>
                 <div className="flex-1 min-w-0">
                   <span className="font-mono text-[9px] text-signal-red">#{inc.id}</span>

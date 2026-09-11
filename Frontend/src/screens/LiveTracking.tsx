@@ -1,38 +1,42 @@
 import { useState, useEffect } from "react";
 import { ChevronDown, AlertTriangle } from "lucide-react";
-import { DEVICES } from "../data";
+import { getDevicePredictions } from "../api";
+import type { Device } from "../data";
+import type { PredictionResult } from "../data";
 import ThreatIcon from "../components/ThreatIcon";
-
-// Simulated anomaly history — most recent first
-const ANOMALY_HISTORY = [
-  { timestamp: "14:32:08", result: "EXPLOSIVE PROXY", confidence: 94 },
-  { timestamp: "14:11:04", result: "NARCOTIC PROXY",  confidence: 89 },
-  { timestamp: "13:52:37", result: "NARCOTIC PROXY",  confidence: 82 },
-  { timestamp: "13:21:15", result: "EXPLOSIVE PROXY", confidence: 91 },
-  { timestamp: "12:48:50", result: "NARCOTIC PROXY",  confidence: 76 },
-  { timestamp: "11:34:22", result: "EXPLOSIVE PROXY", confidence: 88 },
-  { timestamp: "10:57:11", result: "NARCOTIC PROXY",  confidence: 83 },
-  { timestamp: "10:14:03", result: "EXPLOSIVE PROXY", confidence: 95 },
-  { timestamp: "09:38:47", result: "NARCOTIC PROXY",  confidence: 79 },
-  { timestamp: "08:52:30", result: "EXPLOSIVE PROXY", confidence: 86 },
-];
 
 const RESULT_COLOR: Record<string, string> = {
   "EXPLOSIVE PROXY": "#B3262E",
   "NARCOTIC PROXY": "#B3262E",
+  "ALCOHOL": "#D99A27",
+  "CAUTION": "#D99A27",
 };
 
-export default function LiveTracking({ theme }: { theme: "dark" | "light" }) {
+export default function LiveTracking({ theme, devices }: { theme: "dark" | "light"; devices: Device[] }) {
   const dark  = theme === "dark";
   const [selId, setSelId] = useState("SENTRY-032");
   const [drop, setDrop]   = useState(false);
   const [time, setTime]   = useState(() => new Date().toLocaleTimeString("en-IN", { hour12: false }));
+  const [livePredictions, setLivePredictions] = useState<PredictionResult[]>([]);
 
-  const device = DEVICES.find(d => d.id === selId) || DEVICES[0];
+  const device = devices.find(d => d.id === selId);
 
-  // Last anomaly for this device (just use the first entry for demo)
-  const lastAnomaly = ANOMALY_HISTORY[0];
-  const anomalyColor = RESULT_COLOR[lastAnomaly.result] || "#B3262E";
+  useEffect(() => {
+    if (!device) return;
+    let active = true;
+    const refresh = () => getDevicePredictions(device.id).then(next => {
+      if (active) setLivePredictions(next);
+    }).catch(() => undefined);
+    refresh();
+    const interval = window.setInterval(refresh, 2000);
+    return () => { active = false; window.clearInterval(interval); };
+  }, [device?.id]);
+
+  const liveAnomaly = livePredictions[0];
+  const lastAnomaly = liveAnomaly
+    ? { timestamp: liveAnomaly.timestamp, result: liveAnomaly.displayResult || liveAnomaly.prediction || "SAFE", confidence: liveAnomaly.confidence * 100 }
+    : null;
+  const anomalyColor = lastAnomaly ? RESULT_COLOR[lastAnomaly.result] || "#B3262E" : "#A8A39A";
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -46,6 +50,18 @@ export default function LiveTracking({ theme }: { theme: "dark" | "light" }) {
   const muted= dark ? "text-warm-grey": "text-[#6F6A61]";
   const bdr  = dark ? "border-warm-grey/10" : "border-obsidian/8";
   const bg   = dark ? "bg-obsidian"   : "bg-[#F1EDE3]";
+
+  if (!device) {
+    return (
+      <div className={`min-h-full ${bg} p-4 md:p-6`}>
+        <div className={`panel ${cBg} p-10 text-center`}>
+          <div className={`font-mono text-[10px] tracking-widest ${muted}`}>
+            {devices.length === 0 ? "NO DEVICES AVAILABLE" : "SELECTED DEVICE NOT AVAILABLE"}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`min-h-full ${bg}`}>
@@ -70,7 +86,7 @@ export default function LiveTracking({ theme }: { theme: "dark" | "light" }) {
             </button>
             {drop && (
               <div className={`absolute top-full right-0 mt-0.5 z-30 min-w-full border ${bdr} ${cBg} shadow-xl`}>
-                {DEVICES.map(d => {
+                {devices.map(d => {
                   const c = { ONLINE: "#20C878", OFFLINE: "#A8A39A", ALERT: "#B3262E", WARNING: "#D99A27" }[d.status];
                   return (
                     <button key={d.id} onClick={() => { setSelId(d.id); setDrop(false); }}
@@ -152,7 +168,7 @@ export default function LiveTracking({ theme }: { theme: "dark" | "light" }) {
           <div className="space-y-4">
 
             {/* Last anomaly detected */}
-            <div className={`panel ${cBg}`} style={{ borderTop: `2px solid ${anomalyColor}` }}>
+            {lastAnomaly && <div className={`panel ${cBg}`} style={{ borderTop: `2px solid ${anomalyColor}` }}>
               <div className="p-4">
                 <div className="flex items-center gap-2.5 mb-3">
                   <AlertTriangle className="w-4 h-4 flex-shrink-0" style={{ color: anomalyColor }} />
@@ -190,7 +206,7 @@ export default function LiveTracking({ theme }: { theme: "dark" | "light" }) {
                   &nbsp;// LOCATION: <span className={text}>{device.location}</span>
                 </div>
               </div>
-            </div>
+            </div>}
 
             {/* Last 10 anomalies */}
             <div className={`panel ${cBg}`}>
@@ -209,28 +225,32 @@ export default function LiveTracking({ theme }: { theme: "dark" | "light" }) {
                       </tr>
                     </thead>
                     <tbody>
-                      {ANOMALY_HISTORY.map((a, i) => {
-                        const c = RESULT_COLOR[a.result] || "#B3262E";
+                      {livePredictions.map((a, i) => {
+                        const result = a.displayResult || a.prediction || "SAFE";
+                        const c = RESULT_COLOR[result] || "#A8A39A";
                         return (
                           <tr key={i} className={`border-b ${bdr} last:border-0`}>
                             <td className="py-2 font-mono text-[9.5px] text-brass whitespace-nowrap">{a.timestamp}</td>
                               <td className="py-2 pr-3">
                                 <div className="flex items-center gap-2" style={{ color: c }}>
-                                <ThreatIcon state={a.result} size={18} className="flex-shrink-0" />
+                                <ThreatIcon state={result} size={18} className="flex-shrink-0" />
                               <span className="font-mono text-[8.5px] px-1.5 py-[2px] whitespace-nowrap"
                                 style={{ background: `${c}20`, color: c, border: `1px solid ${c}40` }}>
-                                {a.result}
+                                {result}
                               </span>
                                 </div>
                             </td>
                             <td className="py-2 font-mono text-[9.5px]" style={{ color: c }}>
-                              {a.confidence}%
+                              {a.confidence * 100}%
                             </td>
                           </tr>
                         );
                       })}
                     </tbody>
                   </table>
+                  {livePredictions.length === 0 && (
+                    <div className={`py-6 text-center font-mono text-[9.5px] tracking-widest ${muted}`}>NO PREDICTIONS RECORDED</div>
+                  )}
                 </div>
               </div>
             </div>

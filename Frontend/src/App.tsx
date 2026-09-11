@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
+import { acknowledgeIncident, getDashboardSummary, getDevices, getIncidents, getLogs, resolveIncident } from "./api";
 import ThreatIcon from "./components/ThreatIcon";
 import Login from "./components/Login";
 import Sidebar from "./components/Sidebar";
@@ -11,6 +12,7 @@ import AnomalyAlert from "./screens/AnomalyAlert";
 import ThreatHistory from "./screens/ResponseCenter";
 import Devices from "./screens/Devices";
 import SystemLogs from "./screens/SystemLogs";
+import type { Device, Incident, LogEntry } from "./data";
 
 /* ── Toast ── */
 interface Toast { id:number; msg:string; type:"alert"|"info"|"success"; state:string; }
@@ -41,6 +43,10 @@ export default function App() {
   const [mobileNav, setMobileNav] = useState(false);
   const [toasts, setToasts]       = useState<Toast[]>([]);
   const [toastId, setToastId]     = useState(0);
+  const [devices, setDevices]     = useState<Device[]>([]);
+  const [incidents, setIncidents] = useState<Incident[]>([]);
+  const [logs, setLogs]           = useState<LogEntry[]>([]);
+  const [summary, setSummary]     = useState({ connectedDevices: 0, online: 0, offline: 0, activeAlerts: 0 });
 
   function addToast(msg:string, type:Toast["type"]="info", state="SAFE") {
     const id=toastId+1; setToastId(id);
@@ -48,11 +54,37 @@ export default function App() {
     setTimeout(()=>setToasts(t=>t.filter(x=>x.id!==id)),4500);
   }
 
-  useEffect(()=>{
-    if(!loggedIn)return;
-    const id=setTimeout(()=>addToast("ANOMALY DETECTED — SENTRY-032 / ENTRY GATE 2 — EXPLOSIVE PROXY 94%","alert","EXPLOSIVE PROXY"),2000);
-    return ()=>clearTimeout(id);
-  },[loggedIn]);
+  useEffect(() => {
+    if (!loggedIn) return;
+    let active = true;
+    const refresh = async () => {
+      try {
+        const [nextDevices, nextSummary, nextIncidents, nextLogs] = await Promise.all([
+          getDevices(), getDashboardSummary(), getIncidents(), getLogs(),
+        ]);
+        if (!active) return;
+        setDevices(nextDevices);
+        setSummary(nextSummary);
+        setIncidents(nextIncidents);
+        setLogs(nextLogs);
+      } catch {
+        // Keep the last known state while the local backend is unavailable.
+      }
+    };
+    refresh();
+    const interval = window.setInterval(refresh, 2000);
+    return () => { active = false; window.clearInterval(interval); };
+  }, [loggedIn]);
+
+  async function handleAcknowledge(id: string) {
+    await acknowledgeIncident(id);
+    setIncidents(await getIncidents());
+  }
+
+  async function handleResolve(id: string) {
+    await resolveIncident(id);
+    setIncidents(await getIncidents());
+  }
 
   if(!loggedIn) {
     return <Login onLogin={()=>setLoggedIn(true)} />;
@@ -65,7 +97,7 @@ export default function App() {
         onNav={s=>{setScreen(s);setMobileNav(false);}}
         mobileOpen={mobileNav}
         onMobileToggle={()=>setMobileNav(o=>!o)}
-        alertCount={1}
+        alertCount={summary.activeAlerts}
       />
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
@@ -80,7 +112,9 @@ export default function App() {
             <button onClick={()=>setScreen("anomalies")}
               className="flex items-center gap-1.5 hover:opacity-80 transition-opacity">
               <span className="w-1.5 h-1.5 rounded-full bg-signal-red blink"/>
-              <span className="font-mono text-[8.5px] text-signal-red tracking-widest hidden sm:block">3 ACTIVE ALERTS</span>
+              <span className="font-mono text-[8.5px] text-signal-red tracking-widest hidden sm:block">
+                {summary.activeAlerts} ACTIVE ALERTS
+              </span>
             </button>
             <div className="font-mono text-[8.5px] tracking-widest hidden sm:block text-warm-grey/50">v1.0.0</div>
           </div>
@@ -90,23 +124,25 @@ export default function App() {
         <div className="flex-1 overflow-y-auto">
           {screen==="dashboard"&&(
             <Dashboard theme="dark"
+              devices={devices} incidents={incidents} logs={logs} summary={summary}
               onViewDevice={id=>{setDevId(id);setScreen("device-info");}}
               onViewAnomaly={()=>setScreen("anomalies")}/>
           )}
-          {screen==="live-tracking"&&<LiveTracking theme="dark"/>}
+          {screen==="live-tracking"&&<LiveTracking theme="dark" devices={devices}/>} 
           {screen==="device-info"&&(
-            <DeviceInfo deviceId={devId} theme="dark"
+            <DeviceInfo deviceId={devId} theme="dark" devices={devices}
               onBack={()=>setScreen("devices")}
               onLiveTracking={()=>setScreen("live-tracking")}/>
           )}
-          {screen==="devices"&&<Devices theme="dark" onViewDevice={id=>{setDevId(id);setScreen("device-info");}}/>}
+          {screen==="devices"&&<Devices theme="dark" devices={devices} onViewDevice={id=>{setDevId(id);setScreen("device-info");}}/>}
           {screen==="anomalies"&&(
             <AnomalyAlert theme="dark"
-              onAcknowledge={()=>addToast("Issue recognised — RAIL_ADM_001","success","SAFE")}
-              onResolved={()=>{ addToast("EXPLOSIVE PROXY resolved — moved to Threat History","success","EXPLOSIVE PROXY"); setScreen("threat-history"); }}/>
+              incident={incidents.find(item => item.status !== "RESOLVED") || incidents[0]}
+              onAcknowledge={async id=>{ await handleAcknowledge(id); addToast("Issue recognised — RAIL_ADM_001","success","SAFE"); }}
+              onResolved={async id=>{ await handleResolve(id); addToast("Incident resolved — moved to Threat History","success","SAFE"); setScreen("threat-history"); }}/>
           )}
-          {screen==="threat-history"&&<ThreatHistory theme="dark"/>}
-          {screen==="logs"&&<SystemLogs theme="dark"/>}
+          {screen==="threat-history"&&<ThreatHistory theme="dark" incidents={incidents}/>} 
+          {screen==="logs"&&<SystemLogs theme="dark" logs={logs}/>} 
         </div>
       </div>
 

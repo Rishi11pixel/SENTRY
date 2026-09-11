@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { INCIDENTS } from "../data";
+import type { Incident } from "../data";
 import ThreatIcon from "../components/ThreatIcon";
 
 type IncStatus = "LIVE" | "RECOGNISED" | "RESOLVED";
@@ -23,7 +23,7 @@ const GLOW: Record<IncStatus, string> = {
   RESOLVED:   "0 0 10px #20C87899, 0 0 24px #20C87844",
 };
 
-export default function ThreatHistory({ theme }: { theme: "dark" | "light" }) {
+export default function ThreatHistory({ theme, incidents }: { theme: "dark" | "light"; incidents: Incident[] }) {
   const dark  = theme === "dark";
   const bg    = dark ? "bg-obsidian"   : "bg-[#F1EDE3]";
   const cBg   = dark ? "bg-gunmetal"   : "bg-white";
@@ -35,7 +35,7 @@ export default function ThreatHistory({ theme }: { theme: "dark" | "light" }) {
 
   const tc = (t: string) => t.includes("EXPLOSIVE") || t.includes("NARCOTIC") ? "#B3262E" : "#D99A27";
 
-  const items = INCIDENTS.map(inc => ({
+  const items = incidents.map(inc => ({
     ...inc,
     derivedStatus: STATUS_MAP[inc.status] ?? "LIVE" as IncStatus,
   }));

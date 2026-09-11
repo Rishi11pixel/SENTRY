@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { AlertTriangle, MapPin, Cpu, CheckCircle, X } from "lucide-react";
 import ThreatIcon from "../components/ThreatIcon";
+import type { Incident } from "../data";
 
 interface Props {
   theme: "dark" | "light";
-  onAcknowledge: () => void;
-  onResolved: () => void;
+  incident?: Incident;
+  onAcknowledge: (id: string) => void;
+  onResolved: (id: string) => void;
 }
 
 function Modal({ title, msg, onOk, onCancel, dark, okLabel, okClass }: {
@@ -33,7 +35,7 @@ function Modal({ title, msg, onOk, onCancel, dark, okLabel, okClass }: {
   );
 }
 
-export default function AnomalyAlert({ theme, onAcknowledge, onResolved }: Props) {
+export default function AnomalyAlert({ theme, incident, onAcknowledge, onResolved }: Props) {
   const dark = theme === "dark";
   const [ack, setAck]             = useState(false);
   const [showAckConfirm, setAckConf]  = useState(false);
@@ -45,6 +47,16 @@ export default function AnomalyAlert({ theme, onAcknowledge, onResolved }: Props
   const text = dark ? "text-ivory"     : "text-obsidian";
   const muted= dark ? "text-warm-grey" : "text-[#6F6A61]";
   const bdr  = dark ? "border-warm-grey/10" : "border-obsidian/8";
+  if (!incident) {
+    return (
+      <div className={`min-h-full ${bg} p-4 md:p-6`}>
+        <div className={`panel ${cBg} p-10 text-center`}>
+          <div className={`font-mono text-[10px] tracking-widest ${muted}`}>NO ACTIVE INCIDENTS</div>
+        </div>
+      </div>
+    );
+  }
+  const activeIncident = incident;
 
   return (
     <div className={`min-h-full ${bg}`}>
@@ -52,7 +64,7 @@ export default function AnomalyAlert({ theme, onAcknowledge, onResolved }: Props
       <div className="bg-signal-red px-5 md:px-6 py-2.5 flex items-center gap-3">
         <AlertTriangle className="w-4 h-4 text-ivory blink flex-shrink-0" />
         <span className="font-heading text-[12px] tracking-[.18em] font-semibold text-ivory">
-          ANOMALY DETECTED — ACTIVE INCIDENT #ST032-143208
+          ANOMALY DETECTED — ACTIVE INCIDENT #{activeIncident.id}
         </span>
         <span className="ml-auto font-mono text-[9px] text-ivory/70 tracking-widest hidden sm:block">ACTIVE INCIDENT</span>
       </div>
@@ -66,19 +78,19 @@ export default function AnomalyAlert({ theme, onAcknowledge, onResolved }: Props
               <div className="flex-1">
                 <div className="font-mono text-[9px] tracking-[.22em] uppercase text-signal-red mb-2">ANOMALY DETECTED</div>
                 <div className="flex items-center gap-4 text-signal-red mb-3">
-                  <ThreatIcon state="EXPLOSIVE" size={76} className="flex-shrink-0" />
+                  <ThreatIcon state={activeIncident.type} size={76} className="flex-shrink-0" />
                   <div className="font-display text-[56px] md:text-[72px] tracking-widest leading-[.88]">
-                    EXPLOSIVE<br />THREAT
+                    {activeIncident.type}
                   </div>
                 </div>
                 <div className={`font-mono text-[10px] tracking-widest ${muted} mb-5`}>
-                  CONFIDENCE: <span className="text-signal-red font-medium">94%</span>
+                  CONFIDENCE: <span className="text-signal-red font-medium">{activeIncident.confidence}%</span>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                   {[
-                    { l: "DEVICE",   v: "SENTRY-032",   ic: Cpu },
-                    { l: "LOCATION", v: "ENTRY GATE 2", ic: MapPin },
-                    { l: "PLATFORM", v: "PLATFORM 4",   ic: MapPin },
+                    { l: "DEVICE",   v: activeIncident.device,   ic: Cpu },
+                    { l: "LOCATION", v: activeIncident.location, ic: MapPin },
+                    { l: "PLATFORM", v: activeIncident.platform, ic: MapPin },
                   ].map(item => (
                     <div key={item.l} className="p-3 border border-signal-red/18 bg-signal-red/5">
                       <div className="flex items-center gap-1.5 mb-1">
@@ -124,13 +136,13 @@ export default function AnomalyAlert({ theme, onAcknowledge, onResolved }: Props
             <div className="font-mono text-[9px] tracking-[.2em] uppercase text-brass mb-4">DETECTION DETAILS</div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8">
               {[
-                { l: "DETECTION TYPE",  v: "EXPLOSIVE PROXY",    c: "#B3262E" },
+                { l: "DETECTION TYPE",  v: activeIncident.type,    c: "#B3262E" },
                 { l: "DEVICE STATUS",   v: "ACTIVE",             c: "#20C878" },
                 { l: "LOCATION STATUS", v: "RESPONSE REQUIRED",  c: "#B3262E" },
-                { l: "MQ-135 READING",  v: "ELEVATED — 847 ppm", c: "#D99A27" },
-                { l: "MQ-2 READING",    v: "ELEVATED — 634 ppm", c: "#D99A27" },
-                { l: "TEMPERATURE",     v: "29.3°C",             c: "#A8A39A" },
-                { l: "HUMIDITY",        v: "66%",                c: "#A8A39A" },
+                { l: "MQ-135 READING",  v: activeIncident.latestReading ? `${activeIncident.latestReading.mq135} ADC` : "NOT AVAILABLE", c: "#D99A27" },
+                { l: "MQ-2 READING",    v: activeIncident.latestReading ? `${activeIncident.latestReading.mq2} ADC` : "NOT AVAILABLE",   c: "#D99A27" },
+                { l: "TEMPERATURE",     v: activeIncident.latestReading ? `${activeIncident.latestReading.temperature.toFixed(2)}°C` : "NOT AVAILABLE", c: "#A8A39A" },
+                { l: "HUMIDITY",        v: activeIncident.latestReading ? `${activeIncident.latestReading.humidity.toFixed(2)}%` : "NOT AVAILABLE", c: "#A8A39A" },
               ].map(r => (
                 <div key={r.l} className={`flex items-center gap-3 py-2.5 border-b ${bdr} last:border-0`}>
                   <span className={`font-mono text-[8.5px] tracking-widest flex-1 ${muted}`}>{r.l}</span>
@@ -179,8 +191,8 @@ export default function AnomalyAlert({ theme, onAcknowledge, onResolved }: Props
       {showAckConfirm && (
         <Modal
           title="ISSUE RECOGNISED"
-          msg="Confirm that INCIDENT #ST032-143208 has been recognised. This logs your Rail ID and timestamp. Field team must be aware before confirming."
-          onOk={() => { setAck(true); setAckConf(false); onAcknowledge(); }}
+          msg={`Confirm that INCIDENT #${activeIncident.id} has been recognised. This logs your Rail ID and timestamp. Field team must be aware before confirming.`}
+          onOk={() => { setAck(true); setAckConf(false); onAcknowledge(activeIncident.id); }}
           onCancel={() => setAckConf(false)}
           dark={dark}
           okLabel="CONFIRM"
@@ -191,8 +203,8 @@ export default function AnomalyAlert({ theme, onAcknowledge, onResolved }: Props
       {showResConfirm && (
         <Modal
           title="ISSUE RESOLVED"
-          msg="Confirm that INCIDENT #ST032-143208 has been fully resolved and the area is clear. This will close the active anomaly and move it to Threat History."
-          onOk={() => { setResConf(false); onResolved(); }}
+          msg={`Confirm that INCIDENT #${activeIncident.id} has been fully resolved and the area is clear. This will close the active anomaly and move it to Threat History.`}
+          onOk={() => { setResConf(false); onResolved(activeIncident.id); }}
           onCancel={() => setResConf(false)}
           dark={dark}
           okLabel="MARK RESOLVED"
@@ -216,11 +228,11 @@ export default function AnomalyAlert({ theme, onAcknowledge, onResolved }: Props
                 <div className="absolute" style={{ left: "18%", top: "62%", transform: "translate(-50%,-50%)" }}>
                   <div className="w-5 h-5 rounded-full bg-signal-red border-2 border-ivory pulse-red" />
                 </div>
-                <div className="absolute bottom-2 right-2 font-mono text-[7.5px] text-signal-red">ENTRY GATE 2 // PLATFORM 4</div>
+                <div className="absolute bottom-2 right-2 font-mono text-[7.5px] text-signal-red">{activeIncident.location} // {activeIncident.platform}</div>
               </div>
               <div className="space-y-1.5 font-mono text-[9.5px]">
                 <div className="flex justify-between"><span className={muted}>COORDINATES</span><span className="text-brass">28.6447°N, 77.2086°E</span></div>
-                <div className="flex justify-between"><span className={muted}>ZONE</span><span className={text}>ENTRY GATE 2 // PLATFORM 4</span></div>
+                <div className="flex justify-between"><span className={muted}>ZONE</span><span className={text}>{activeIncident.location} // {activeIncident.platform}</span></div>
                 <div className="flex justify-between"><span className={muted}>STATION</span><span className={text}>NEW DELHI JN (NDLS)</span></div>
               </div>
             </div>

@@ -1,20 +1,19 @@
 import requests
 import re
 import time
+import os
+from pathlib import Path
 
 
 # ============================================================
 # CONFIG
 # ============================================================
 
-SERVER_URL = "http://127.0.0.1:5000/predict"
-READINGS_FILE = "sensor_readings.txt"
-WAIT_TIME = 3
-
-# Temporary assumption:
-# SEN0567 is currently assumed to be in model-space units.
-SEN0567_VALUE = 0.68
-
+SERVER_URL = os.getenv("SENTRY_BACKEND_URL", "http://127.0.0.1:8000/api/v1/devices/SENTRY-032/readings")
+REPO_ROOT = Path(__file__).resolve().parent.parent
+DEFAULT_READINGS_FILE = REPO_ROOT / "sentry_fake_readings_1800.txt"
+READINGS_FILE = DEFAULT_READINGS_FILE
+WAIT_TIME = 0.1
 
 # ============================================================
 # LOAD ALL READINGS FROM TXT
@@ -23,6 +22,11 @@ SEN0567_VALUE = 0.68
 def load_readings():
 
     print("\nReading:", READINGS_FILE)
+
+    if not READINGS_FILE.is_file():
+        raise FileNotFoundError(
+            f"Canonical fake readings file not found: {READINGS_FILE}"
+        )
 
     with open(
         READINGS_FILE,
@@ -42,7 +46,9 @@ def load_readings():
         r"Humidity:\s*([-+]?\d+(?:\.\d+)?)\s*%\s*"
         r"MQ-2\s*\(Gas\):\s*(\d+)\s*"
         r"MQ-3\s*\(Flying-Fish\):\s*(\d+)\s*"
-        r"MQ-135\s*\(Air Quality\):\s*(\d+)",
+        r"MQ-135\s*\(Air Quality\):\s*(\d+)\s*"
+        r"Fermion NH3\s*\(SEN0567\):\s*([-+]?\d+(?:\.\d+)?)\s*"
+        r"(?:STATUS:\s*([^\r\n]+))?",
         re.MULTILINE
     )
 
@@ -61,6 +67,8 @@ def load_readings():
         mq2 = float(match[2])
         mq3 = float(match[3])
         mq135 = float(match[4])
+        sen0567 = float(match[5])
+        source_status = match[6].strip() if match[6] else None
 
 
         readings.append({
@@ -80,245 +88,41 @@ def load_readings():
 
             "mq135": mq135,
 
-            # ------------------------------------------------
-            # TEMPORARY SEN0567 VALUE
-            # ------------------------------------------------
-            "sen0567": SEN0567_VALUE
+            "sen0567": sen0567
         })
+
+        if source_status:
+            readings[-1]["source_status"] = source_status
 
 
     return readings
 
 
-# ============================================================
-# SEND ONE 3-SECOND WINDOW
-# ============================================================
-
-def send_window(
-    window,
-    window_number
-):
-
-    payload = {
-
-        "device_id":
-            "SENTRY-01",
-
-        "readings":
-            window
-    }
-
-
-    print(
-        "\n========================================"
-    )
-
-    print(
-        f"SENDING WINDOW #{window_number}"
-    )
-
-    print(
-        "Readings:",
-        len(window)
-    )
-
-    print(
-        f"Time: "
-        f"{window[0]['timestamp']:.1f}s"
-        f" -> "
-        f"{window[-1]['timestamp']:.1f}s"
-    )
-
-    print(
-        "========================================"
-    )
-
-
-    # ========================================================
-    # PRINT ACTUAL SENSOR VALUES
-    # ========================================================
-
-    print(
-        "\nSensor data being sent:"
-    )
-
-
-    for i, reading in enumerate(window):
-
-        print(
-
-            f"{i+1:02d} | "
-
-            f"T={reading['temperature']:.2f} C | "
-
-            f"H={reading['humidity']:.2f}% | "
-
-            f"MQ2={reading['mq2']:.0f} | "
-
-            f"MQ3={reading['mq3']:.0f} | "
-
-            f"MQ135={reading['mq135']:.0f} | "
-
-            f"SEN0567={reading['sen0567']:.2f}"
-
-        )
-
-
-    # ========================================================
-    # HTTP REQUEST
-    # ========================================================
-
+def send_reading(reading, reading_number):
+    payload = {**reading, "battery": 84, "signal": 92}
     try:
-
-        response = requests.post(
-
-            SERVER_URL,
-
-            json=payload,
-
-            timeout=10
-        )
-
-
-        print(
-            "\nHTTP STATUS:"
-        )
-
-        print(
-            response.status_code
-        )
-
-
-        # ====================================================
-        # SHOW SERVER ERROR IF HTTP 500
-        # ====================================================
-
+        response = requests.post(SERVER_URL, json=payload, timeout=10)
         if response.status_code != 200:
-
-            print(
-                "\nSERVER ERROR RESPONSE:"
-            )
-
-            print(
-                response.text
-            )
-
+            print(f"Reading {reading_number}: HTTP {response.status_code} - {response.text}")
             return False
 
-
         result = response.json()
-
-
-        # ====================================================
-        # MODEL RESPONSE
-        # ====================================================
-
         print(
-            "\n========== MODEL RESPONSE =========="
+            f"{reading_number:03d} | buffer={result['buffer_count']}/{result['window_size']}"
         )
-
-
-        print(
-
-            "Prediction:",
-
-            result.get(
-                "prediction"
-            )
-
-        )
-
-
-        print(
-
-            "Confidence:",
-
-            result.get(
-                "confidence"
-            )
-
-        )
-
-
-        # ====================================================
-        # PROBABILITIES
-        # ====================================================
-
-        print(
-            "\nProbabilities:"
-        )
-
-
-        for (
-            label,
-            probability
-        ) in result.get(
-            "probabilities",
-            {}
-        ).items():
-
+        if result.get("prediction"):
+            prediction = result["prediction"]
             print(
-
-                f"  {label}: "
-                f"{probability}"
-
+                f"  Prediction: {prediction.get('prediction')} "
+                f"({float(prediction.get('confidence', 0)) * 100:.2f}%)"
             )
-
-
-        # ====================================================
-        # FEATURES
-        # ====================================================
-
-        print(
-            "\nFeatures sent to model:"
-        )
-
-
-        for (
-            name,
-            value
-        ) in result.get(
-            "features",
-            {}
-        ).items():
-
-            print(
-
-                f"  {name}: "
-                f"{value}"
-
-            )
-
-
-        print(
-            "===================================="
-        )
-
-
+        return True
     except requests.exceptions.ConnectionError:
-
-        print(
-            "\nERROR: Cannot connect to ML server."
-        )
-
-        print(
-            "Run: python ml_server.py"
-        )
-
+        print("ERROR: Cannot connect to SENTRY backend. Run: python backend/app.py")
         return False
-
-
-    except Exception as e:
-
-        print(
-            "\nERROR:",
-            e
-        )
-
+    except (KeyError, ValueError, requests.RequestException) as exc:
+        print(f"ERROR sending reading {reading_number}: {exc}")
         return False
-
-
-    return True
 
 
 # ============================================================
@@ -367,105 +171,16 @@ def main():
         return
 
 
-    # ========================================================
-    # CREATE 30-SAMPLE WINDOWS
-    # ========================================================
-
-    windows = []
-
-
-    for i in range(
-
-        0,
-
-        len(readings) - 29,
-
-        30
-
-    ):
-
-        window = readings[
-            i:i + 30
-        ]
-
-
-        windows.append(
-            window
-        )
-
-
-    print(
-
-        f"Complete 3-second windows: "
-        f"{len(windows)}"
-
-    )
-
-
     print(
         "\nStarting transmission..."
     )
 
-
-    # ========================================================
-    # SEND EVERY WINDOW
-    # ========================================================
-
-    for (
-
-        window_number,
-
-        window
-
-    ) in enumerate(
-
-        windows,
-
-        start=1
-
-    ):
-
-
-        success = send_window(
-
-            window,
-
-            window_number
-
-        )
-
-
-        if not success:
-
-            print(
-                "\nStopping."
-            )
-
+    for reading_number, reading in enumerate(readings, start=1):
+        if not send_reading(reading, reading_number):
+            print("\nStopping.")
             break
-
-
-        # ====================================================
-        # WAIT 3 SECONDS
-        # ====================================================
-
-        if (
-
-            window_number
-            < len(windows)
-
-        ):
-
-            print(
-
-                "\nWaiting 3 seconds "
-                "before next request..."
-
-            )
-
-
-            time.sleep(
-                WAIT_TIME
-            )
+        if reading_number < len(readings):
+            time.sleep(WAIT_TIME)
 
 
     print(

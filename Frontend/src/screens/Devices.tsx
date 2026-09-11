@@ -1,9 +1,8 @@
 import { useState } from "react";
 import { Search, Battery } from "lucide-react";
-import { DEVICES } from "../data";
 import type { Device } from "../data";
 
-interface Props { theme: "dark" | "light"; onViewDevice: (id: string) => void; }
+interface Props { theme: "dark" | "light"; devices: Device[]; onViewDevice: (id: string) => void; }
 
 const SC: Record<string, string> = {
   ONLINE:  "#20C878",
@@ -53,7 +52,7 @@ function DeviceCard({ d, theme, onClick }: { d: Device; theme: "dark" | "light";
   );
 }
 
-export default function Devices({ theme, onViewDevice }: Props) {
+export default function Devices({ theme, devices, onViewDevice }: Props) {
   const dark  = theme === "dark";
   const [q, setQ]   = useState("");
   const [sf, setSf] = useState("ALL");
@@ -64,7 +63,7 @@ export default function Devices({ theme, onViewDevice }: Props) {
   const muted= dark ? "text-warm-grey": "text-[#6F6A61]";
   const bdr  = dark ? "border-warm-grey/10" : "border-obsidian/8";
 
-  const filtered = DEVICES
+  const filtered = devices
     .filter(d => !q || d.id.toLowerCase().includes(q.toLowerCase()) || d.location.toLowerCase().includes(q.toLowerCase()))
     .filter(d => sf === "ALL" || (sf === "ONLINE" ? d.status !== "OFFLINE" : d.status === sf));
 
@@ -77,9 +76,9 @@ export default function Devices({ theme, onViewDevice }: Props) {
           <div>
             <div className={`font-display text-[40px] md:text-[50px] tracking-widest leading-none ${text}`}>DEVICES</div>
             <div className={`font-mono text-[9.5px] tracking-widest uppercase mt-1 ${muted}`}>
-              {DEVICES.length} registered units //&nbsp;
-              {DEVICES.filter(d => d.status === "ONLINE").length} online //&nbsp;
-              {DEVICES.filter(d => d.status === "ALERT").length} alert
+              {devices.length} registered units //&nbsp;
+              {devices.filter(d => d.status === "ONLINE").length} online //&nbsp;
+              {devices.filter(d => d.status === "ALERT").length} alert
             </div>
           </div>
           <div className={`font-mono text-[8.5px] tracking-widest px-2 py-1 ${cBg} border ${bdr}`}>
