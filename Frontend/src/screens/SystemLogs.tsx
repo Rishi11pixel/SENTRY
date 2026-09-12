@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { Download } from "lucide-react";
-import { LOGS } from "../data";
+import type { LogEntry } from "../data";
 
 const DEVICE_KEYWORDS = ["battery","sensor","calibr","connection","temperature","humidity","heartbeat","operator","handover","environmental","noise","firmware"];
 const LC: Record<string, string> = { ALERT:"#B3262E", WARNING:"#D99A27", SUCCESS:"#20C878", INFO:"#C49A4A" };
 
-export default function SystemLogs({ theme }: { theme: "dark" | "light" }) {
+export default function SystemLogs({ theme, logs }: { theme: "dark" | "light"; logs: LogEntry[] }) {
   const dark  = theme === "dark";
   const [f, setF] = useState("ALL");
 
@@ -16,9 +16,9 @@ export default function SystemLogs({ theme }: { theme: "dark" | "light" }) {
   const bdr  = dark ? "border-warm-grey/10" : "border-obsidian/8";
 
   const filtered =
-    f === "ALERTS"  ? LOGS.filter(l => l.level === "ALERT") :
-    f === "DEVICES" ? LOGS.filter(l => DEVICE_KEYWORDS.some(k => l.event.toLowerCase().includes(k))) :
-    LOGS;
+    f === "ALERTS"  ? logs.filter(l => l.level === "ALERT") :
+    f === "DEVICES" ? logs.filter(l => DEVICE_KEYWORDS.some(k => l.event.toLowerCase().includes(k))) :
+    logs;
 
   function exportLogs() {
     const header = "TIMESTAMP,DEVICE,EVENT,LOCATION,STATUS\n";
@@ -45,10 +45,10 @@ export default function SystemLogs({ theme }: { theme: "dark" | "light" }) {
         {/* Summary tiles */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
           {[
-            { l: "TOTAL ENTRIES",  v: LOGS.length,                                   c: "#C49A4A" },
-            { l: "ALERTS",         v: LOGS.filter(l => l.level === "ALERT").length,   c: "#B3262E" },
-            { l: "WARNINGS",       v: LOGS.filter(l => l.level === "WARNING").length, c: "#D99A27" },
-            { l: "SUCCESSFUL OPS", v: LOGS.filter(l => l.level === "SUCCESS").length, c: "#20C878" },
+            { l: "TOTAL ENTRIES",  v: logs.length,                                   c: "#C49A4A" },
+            { l: "ALERTS",         v: logs.filter(l => l.level === "ALERT").length,   c: "#B3262E" },
+            { l: "WARNINGS",       v: logs.filter(l => l.level === "WARNING").length, c: "#D99A27" },
+            { l: "SUCCESSFUL OPS", v: logs.filter(l => l.level === "SUCCESS").length, c: "#20C878" },
           ].map(s => (
             <div key={s.l} className={`panel ${cBg} p-3`}>
               <div className={`font-mono text-[8px] tracking-widest ${muted} mb-1`}>{s.l}</div>
@@ -115,7 +115,7 @@ export default function SystemLogs({ theme }: { theme: "dark" | "light" }) {
             </table>
           </div>
           <div className={`px-4 py-2.5 border-t ${bdr} flex items-center justify-between`}>
-            <div className={`font-mono text-[8.5px] tracking-widest ${muted}`}>SHOWING {filtered.length} OF {LOGS.length} ENTRIES</div>
+            <div className={`font-mono text-[8.5px] tracking-widest ${muted}`}>SHOWING {filtered.length} OF {logs.length} ENTRIES</div>
             <div className="font-mono text-[8.5px] tracking-widest text-brass">LAST REFRESH: {new Date().toLocaleTimeString("en-IN", { hour12: false })}</div>
           </div>
         </div>

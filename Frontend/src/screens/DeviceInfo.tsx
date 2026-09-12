@@ -1,33 +1,11 @@
+import { useEffect, useState } from "react";
 import { ArrowLeft, Battery, Signal, MapPin } from "lucide-react";
-import { DEVICES } from "../data";
+import { getDevicePredictions } from "../api";
+import type { Device } from "../data";
+import type { PredictionResult } from "../data";
 import ThreatIcon from "../components/ThreatIcon";
 
-interface Props { deviceId: string; theme: "dark" | "light"; onBack: () => void; onLiveTracking: () => void; }
-
-// Recent anomalies per device — last 5 only
-const RECENT_ANOMALIES: Record<string, { timestamp: string; result: string; confidence: number }[]> = {
-  "SENTRY-032": [
-    { timestamp: "14:32:08", result: "EXPLOSIVE PROXY", confidence: 94 },
-    { timestamp: "13:21:15", result: "EXPLOSIVE PROXY", confidence: 91 },
-    { timestamp: "11:34:22", result: "EXPLOSIVE PROXY", confidence: 88 },
-    { timestamp: "09:18:44", result: "NARCOTIC PROXY",  confidence: 78 },
-    { timestamp: "08:02:11", result: "EXPLOSIVE PROXY", confidence: 85 },
-  ],
-  "SENTRY-021": [
-    { timestamp: "14:11:04", result: "NARCOTIC PROXY",  confidence: 89 },
-    { timestamp: "12:48:50", result: "NARCOTIC PROXY",  confidence: 76 },
-    { timestamp: "10:14:03", result: "EXPLOSIVE PROXY", confidence: 82 },
-    { timestamp: "08:52:30", result: "NARCOTIC PROXY",  confidence: 79 },
-    { timestamp: "07:30:18", result: "NARCOTIC PROXY",  confidence: 83 },
-  ],
-  "SENTRY-014": [
-    { timestamp: "13:52:37", result: "NARCOTIC PROXY",  confidence: 82 },
-    { timestamp: "11:20:14", result: "EXPLOSIVE PROXY", confidence: 90 },
-    { timestamp: "09:44:07", result: "NARCOTIC PROXY",  confidence: 75 },
-    { timestamp: "08:11:55", result: "EXPLOSIVE PROXY", confidence: 87 },
-    { timestamp: "06:58:30", result: "NARCOTIC PROXY",  confidence: 80 },
-  ],
-};
+interface Props { deviceId: string; theme: "dark" | "light"; devices: Device[]; onBack: () => void; onLiveTracking: () => void; }
 
 const RC: Record<string, string> = {
   "EXPLOSIVE PROXY": "#B3262E",
@@ -35,16 +13,39 @@ const RC: Record<string, string> = {
   "ALCOHOL":         "#D99A27",
 };
 
-export default function DeviceInfo({ deviceId, theme, onBack, onLiveTracking }: Props) {
+export default function DeviceInfo({ deviceId, theme, devices, onBack, onLiveTracking }: Props) {
   const dark   = theme === "dark";
-  const device = DEVICES.find(d => d.id === deviceId) || DEVICES[0];
-  const anomalies = RECENT_ANOMALIES[device.id] || [];
+  const device = devices.find(d => d.id === deviceId);
+  const [livePredictions, setLivePredictions] = useState<PredictionResult[]>([]);
+
+  useEffect(() => {
+    if (!device) return;
+    let active = true;
+    const refresh = () => getDevicePredictions(device.id).then(next => {
+      if (active) setLivePredictions(next);
+    }).catch(() => undefined);
+    refresh();
+    const interval = window.setInterval(refresh, 2000);
+    return () => { active = false; window.clearInterval(interval); };
+  }, [device?.id]);
+
+  const anomalies = livePredictions.map(item => ({ timestamp: item.timestamp, result: item.displayResult || item.prediction || "SAFE", confidence: item.confidence * 100 }));
 
   const bg   = dark ? "bg-obsidian"   : "bg-[#F1EDE3]";
   const cBg  = dark ? "bg-gunmetal"   : "bg-white";
   const text = dark ? "text-ivory"    : "text-obsidian";
   const muted= dark ? "text-warm-grey": "text-[#6F6A61]";
   const bdr  = dark ? "border-warm-grey/10" : "border-obsidian/8";
+
+  if (!device) {
+    return (
+      <div className={`min-h-full ${bg} p-4 md:p-6`}>
+        <div className={`panel ${cBg} p-10 text-center`}>
+          <div className={`font-mono text-[10px] tracking-widest ${muted}`}>DEVICE NOT AVAILABLE</div>
+        </div>
+      </div>
+    );
+  }
 
   const sc = { ONLINE: "#20C878", OFFLINE: "#A8A39A", ALERT: "#B3262E", WARNING: "#D99A27" }[device.status];
   const battColor = device.battery > 50 ? "#20C878" : device.battery > 20 ? "#D99A27" : "#B3262E";

@@ -1,0 +1,34 @@
+{
+  "source": "sentry_fake_readings_1800.txt",
+  "source_readings": 1800,
+  "sent": 1800,
+  "accepted": 1800,
+  "rejected": 0,
+  "windows_expected": 60,
+  "predictions_during_stream": 60,
+  "stored_predictions": 60,
+  "prediction_labels": {
+    "SAFE": 39,
+    "WEATHER": 11,
+    "ALCOHOL": 10
+  },
+  "incidents": 10,
+  "duplicate_prediction_ids": 0,
+  "duplicate_window_ids": 0,
+  "pending_ml_failure_logs": 0,
+  "final_buffer_count": 0,
+  "elapsed_seconds": 183.26,
+  "average_request_latency_ms": 23.57,
+  "max_request_latency_ms": 411.27,
+  "final_status": "ONLINE",
+  "final_prediction": "SAFE",
+  "final_features": {
+    "VMQ135": 0.33976,
+    "VMQ2": 0.29941,
+    "VMQ3": 0.33964,
+    "VSEN0567": 0.28942,
+    "dVdt_max": 0.1284,
+    "humidity": 80.67,
+    "temperature": 30.51
+  }
+}

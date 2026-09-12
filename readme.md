@@ -37,7 +37,31 @@ Open the local URL printed by Vite. To create a production build:
 pnpm build
 ```
 
-The frontend is a prototype control center and currently uses local/static application data rather than a connected backend.
+The frontend is a prototype control center with backend integration and static data as a fallback when the local backend is unavailable.
+
+## Local End-to-End Run
+
+The integration backend accepts one sensor reading at a time, buffers 30 readings per device, and forwards complete windows to the existing ML server. State is held in memory for local development.
+
+Install backend dependencies and run the services in separate PowerShell terminals:
+
+```powershell
+python -m pip install -r backend/requirements.txt
+python ml_test/ml_server.py
+python backend/app.py
+python ml_test/send_readings.py
+```
+
+The backend listens on `http://127.0.0.1:8000` and the ML server listens on `http://127.0.0.1:5000`. The frontend reads `VITE_API_URL`, defaulting to the backend URL above. Set it before starting Vite when the backend is hosted elsewhere:
+
+```powershell
+$env:VITE_API_URL = "http://127.0.0.1:8000"
+cd Frontend
+pnpm install
+pnpm dev
+```
+
+The fake sender uses `SENTRY_BACKEND_URL` when a different ingestion URL is required. The backend settings are listed in `backend/.env.example`.
 
 ## Machine-Learning Setup
 
@@ -67,6 +91,12 @@ The TinyML pipeline uses these seven features:
 ```text
 VMQ2, VMQ3, VMQ135, VSEN0567, dVdt_max, temperature, humidity
 ```
+
+The canonical fake ESP32 source is `sentry_fake_readings_1800.txt`. The sender
+requires that file, parses exactly 1,800 readings, and sends one reading per
+request. It does not fall back to `ml_test/sensor_readings.txt` or generate
+replacement sensor values. Battery and signal are synthetic device metadata;
+they are not ML features.
 
 `VSEN0567` represents the DFRobot SEN0567 NH3-sensitive sensor. The synthetic
 generator applies environmental compensation independently to each gas sensor:
