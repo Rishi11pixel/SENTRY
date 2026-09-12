@@ -3,6 +3,12 @@ import numpy as np
 import tensorflow as tf
 from pathlib import Path
 
+ROOT = Path(__file__).resolve().parent.parent
+import sys
+
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 from ml.config import MODEL_BASELINES, REAL_BASELINES
 
 
@@ -18,19 +24,19 @@ app = Flask(__name__)
 # ============================================================
 
 MODEL_PATH = Path(
-    r"D:\SENTRY\models\tinyml\sentry_tinyml.keras"
+    r"C:\SENTRY\models\tinyml\sentry_tinyml.keras"
 )
 
 SCALER_MEAN_PATH = Path(
-    r"D:\SENTRY\models\tinyml\scaler_mean.npy"
+    r"C:\SENTRY\models\tinyml\scaler_mean.npy"
 )
 
 SCALER_SCALE_PATH = Path(
-    r"D:\SENTRY\models\tinyml\scaler_scale.npy"
+    r"C:\SENTRY\models\tinyml\scaler_scale.npy"
 )
 
 LABELS_PATH = Path(
-    r"D:\SENTRY\models\tinyml\label_classes.npy"
+    r"C:\SENTRY\models\tinyml\label_classes.npy"
 )
 
 
