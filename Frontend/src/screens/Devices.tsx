@@ -11,9 +11,14 @@ const SC: Record<string, string> = {
   WARNING: "#D99A27",
 };
 
+function displayStatus(d: Device): Device["status"] {
+  return d.lastResult === "ALCOHOL" ? "WARNING" : d.status;
+}
+
 function DeviceCard({ d, theme, onClick }: { d: Device; theme: "dark" | "light"; onClick: () => void }) {
   const dark = theme === "dark";
-  const sc   = SC[d.status];
+  const shownStatus = displayStatus(d);
+  const sc   = SC[shownStatus];
   const muted= dark ? "text-warm-grey" : "text-[#6F6A61]";
   const text = dark ? "text-ivory"     : "text-obsidian";
   const bdr  = dark ? "border-warm-grey/10" : "border-obsidian/8";
@@ -33,9 +38,9 @@ function DeviceCard({ d, theme, onClick }: { d: Device; theme: "dark" | "light";
           </div>
           <span className="font-mono text-[8px] px-2 py-[3px] tracking-widest inline-flex items-center gap-1.5 mt-0.5"
             style={{ background: `${sc}22`, color: sc, border: `1px solid ${sc}40` }}>
-            <span className={`w-1.5 h-1.5 rounded-full ${d.status === "ONLINE" ? "pulse-green" : d.status === "ALERT" ? "pulse-red" : ""}`}
+            <span className={`w-1.5 h-1.5 rounded-full ${shownStatus === "ONLINE" ? "pulse-green" : shownStatus === "ALERT" ? "pulse-red" : shownStatus === "WARNING" ? "pulse-amber" : ""}`}
               style={{ background: sc }} />
-            {d.status}
+            {shownStatus}
           </span>
         </div>
 
@@ -76,9 +81,9 @@ export default function Devices({ theme, devices, onViewDevice }: Props) {
           <div>
             <div className={`font-display text-[40px] md:text-[50px] tracking-widest leading-none ${text}`}>DEVICES</div>
             <div className={`font-mono text-[9.5px] tracking-widest uppercase mt-1 ${muted}`}>
-              {devices.length} registered units //&nbsp;
-              {devices.filter(d => d.status === "ONLINE").length} online //&nbsp;
-              {devices.filter(d => d.status === "ALERT").length} alert
+                  {devices.length} registered units //&nbsp;
+                  {devices.filter(d => d.status === "ONLINE").length} online //&nbsp;
+                  {devices.filter(d => d.status === "ALERT" && d.lastResult !== "ALCOHOL").length} alert
             </div>
           </div>
           <div className={`font-mono text-[8.5px] tracking-widest px-2 py-1 ${cBg} border ${bdr}`}>

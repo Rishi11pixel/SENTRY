@@ -13,6 +13,10 @@ const RC: Record<string, string> = {
   "ALCOHOL":         "#D99A27",
 };
 
+function displayResult(result: string) {
+  return result === "CAUTION" ? "WEATHER DRIFT" : result;
+}
+
 export default function DeviceInfo({ deviceId, theme, devices, onBack, onLiveTracking }: Props) {
   const dark   = theme === "dark";
   const device = devices.find(d => d.id === deviceId);
@@ -47,7 +51,10 @@ export default function DeviceInfo({ deviceId, theme, devices, onBack, onLiveTra
     );
   }
 
-  const sc = { ONLINE: "#20C878", OFFLINE: "#A8A39A", ALERT: "#B3262E", WARNING: "#D99A27" }[device.status];
+  const sc = device.lastResult === "ALCOHOL"
+    ? "#D99A27"
+    : { ONLINE: "#20C878", OFFLINE: "#A8A39A", ALERT: "#B3262E", WARNING: "#D99A27" }[device.status];
+  const shownStatus = device.lastResult === "ALCOHOL" ? "WARNING" : device.status;
   const battColor = device.battery > 50 ? "#20C878" : device.battery > 20 ? "#D99A27" : "#B3262E";
 
   return (
@@ -79,7 +86,7 @@ export default function DeviceInfo({ deviceId, theme, devices, onBack, onLiveTra
                 <span className="font-mono text-[8.5px] tracking-widest px-2 py-1 inline-flex items-center gap-1.5 mt-1"
                   style={{ background: `${sc}22`, color: sc, border: `1px solid ${sc}40` }}>
                   <span className="w-1.5 h-1.5 rounded-full" style={{ background: sc }} />
-                  {device.status}
+                  {shownStatus}
                 </span>
               </div>
 
@@ -99,7 +106,7 @@ export default function DeviceInfo({ deviceId, theme, devices, onBack, onLiveTra
                     <span className={`font-mono text-[8px] tracking-widest uppercase ${muted}`}>DEVICE STATUS</span>
                   </div>
                   <div className="font-mono text-[16px] font-medium" style={{ color: sc }}>
-                    {device.status}
+                    {shownStatus}
                   </div>
                 </div>
 
@@ -149,7 +156,7 @@ export default function DeviceInfo({ deviceId, theme, devices, onBack, onLiveTra
                             <ThreatIcon state={a.result} size={18} className="flex-shrink-0" />
                             <span className="font-mono text-[8.5px] px-1.5 py-[2px] whitespace-nowrap"
                               style={{ background: `${c}20`, color: c, border: `1px solid ${c}40` }}>
-                              {a.result}
+                              {displayResult(a.result)}
                             </span>
                           </div>
                         </td>

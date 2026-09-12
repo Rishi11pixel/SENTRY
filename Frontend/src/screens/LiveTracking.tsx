@@ -8,9 +8,13 @@ import ThreatIcon from "../components/ThreatIcon";
 const RESULT_COLOR: Record<string, string> = {
   "EXPLOSIVE PROXY": "#B3262E",
   "NARCOTIC PROXY": "#B3262E",
-  "ALCOHOL": "#D99A27",
-  "CAUTION": "#D99A27",
 };
+
+const RED_ANOMALIES = new Set(["EXPLOSIVE PROXY", "NARCOTIC PROXY"]);
+
+function displayResult(result: string) {
+  return result === "CAUTION" ? "WEATHER DRIFT" : result;
+}
 
 export default function LiveTracking({ theme, devices }: { theme: "dark" | "light"; devices: Device[] }) {
   const dark  = theme === "dark";
@@ -32,9 +36,10 @@ export default function LiveTracking({ theme, devices }: { theme: "dark" | "ligh
     return () => { active = false; window.clearInterval(interval); };
   }, [device?.id]);
 
-  const liveAnomaly = livePredictions[0];
+  const redPredictions = livePredictions.filter(prediction => RED_ANOMALIES.has(prediction.displayResult || prediction.prediction || ""));
+  const liveAnomaly = redPredictions[0];
   const lastAnomaly = liveAnomaly
-    ? { timestamp: liveAnomaly.timestamp, result: liveAnomaly.displayResult || liveAnomaly.prediction || "SAFE", confidence: liveAnomaly.confidence * 100 }
+    ? { timestamp: liveAnomaly.timestamp, result: displayResult(liveAnomaly.displayResult || liveAnomaly.prediction || ""), confidence: liveAnomaly.confidence * 100 }
     : null;
   const anomalyColor = lastAnomaly ? RESULT_COLOR[lastAnomaly.result] || "#B3262E" : "#A8A39A";
 
@@ -225,8 +230,8 @@ export default function LiveTracking({ theme, devices }: { theme: "dark" | "ligh
                       </tr>
                     </thead>
                     <tbody>
-                      {livePredictions.map((a, i) => {
-                        const result = a.displayResult || a.prediction || "SAFE";
+                      {redPredictions.map((a, i) => {
+                        const result = displayResult(a.displayResult || a.prediction || "");
                         const c = RESULT_COLOR[result] || "#A8A39A";
                         return (
                           <tr key={i} className={`border-b ${bdr} last:border-0`}>
@@ -248,7 +253,7 @@ export default function LiveTracking({ theme, devices }: { theme: "dark" | "ligh
                       })}
                     </tbody>
                   </table>
-                  {livePredictions.length === 0 && (
+                  {redPredictions.length === 0 && (
                     <div className={`py-6 text-center font-mono text-[9.5px] tracking-widest ${muted}`}>NO PREDICTIONS RECORDED</div>
                   )}
                 </div>

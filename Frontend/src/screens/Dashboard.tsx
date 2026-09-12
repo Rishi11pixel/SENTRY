@@ -6,6 +6,15 @@ import ThreatIcon from "../components/ThreatIcon";
 /* ── helpers ── */
 const STATUS_COLOR: Record<string,string> = { ONLINE:"#20C878", OFFLINE:"#A8A39A", ALERT:"#B3262E", WARNING:"#D99A27" };
 const RESULT_COLOR: Record<string,string> = { "SAFE":"#20C878","CAUTION":"#D99A27","ALCOHOL":"#D99A27","EXPLOSIVE PROXY":"#B3262E","NARCOTIC PROXY":"#B3262E" };
+const DETECTION_KEYWORDS = ["safe", "caution", "weather", "alcohol", "sanitizer", "narcotic", "explosive"];
+
+function displayEvent(event: string) {
+  return event.replace(/\bCAUTION\b/gi, "WEATHER DRIFT");
+}
+
+function displayResult(result: string) {
+  return result === "CAUTION" ? "WEATHER DRIFT" : result;
+}
 
 function Badge({ status }: { status: Device["status"] }) {
   const c = STATUS_COLOR[status];
@@ -16,6 +25,10 @@ function Badge({ status }: { status: Device["status"] }) {
       {status}
     </span>
   );
+}
+
+function displayStatus(device: Device): Device["status"] {
+  return device.lastResult === "ALCOHOL" ? "WARNING" : device.status;
 }
 
 function LogStatus({ level }: { level:string }) {
@@ -107,8 +120,8 @@ function StationMap({ dark, devices, onDevice }:{ dark:boolean; devices:Device[]
             style={{ left:`${d.mapX}%`, top:`${d.mapY}%` }}>
             <div className="relative">
               {/* pulse ring */}
-              {d.status==="ALERT"&&<div className="absolute inset-0 rounded-full pulse-red" style={{background:c,opacity:.5}}/>}
-              {d.status==="WARNING"&&<div className="absolute inset-0 rounded-full pulse-amber" style={{background:c,opacity:.4}}/>}
+              {d.status==="ALERT"&&d.lastResult!=="ALCOHOL"&&<div className="absolute inset-0 rounded-full pulse-red" style={{background:c,opacity:.5}}/>}
+              {(d.status==="WARNING"||d.lastResult==="ALCOHOL")&&<div className="absolute inset-0 rounded-full pulse-amber" style={{background:c,opacity:.4}}/>}
               {d.status==="ONLINE"&&<div className="absolute inset-0 rounded-full pulse-green" style={{background:c,opacity:.3}}/>}
               <div className="w-7 h-7 rounded-full border-[2px] border-obsidian relative z-10 transition-transform group-hover:scale-125 flex items-center justify-center"
                 style={{background:c, color:resultColor, boxShadow:`0 0 8px ${c}80`}}>
@@ -118,7 +131,7 @@ function StationMap({ dark, devices, onDevice }:{ dark:boolean; devices:Device[]
               <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 panel ${dark?"bg-gunmetal":"bg-white panel-light"} px-2.5 py-1.5`}>
                 <div className="font-mono text-[9px] tracking-widest" style={{color:c}}>{d.id}</div>
                 <div className={`font-mono text-[8px] ${dark?"text-warm-grey":"text-[#6F6A61]"}`}>{d.location}</div>
-                <div className="font-mono text-[8px] tracking-widest" style={{color:resultColor}}>{d.lastResult}</div>
+                <div className="font-mono text-[8px] tracking-widest" style={{color:resultColor}}>{displayResult(d.lastResult)}</div>
               </div>
             </div>
           </button>
@@ -156,7 +169,7 @@ function DevicePopup({ d, dark, onClose, onView }:{ d:Device; dark:boolean; onCl
             <X className="w-4 h-4"/>
           </button>
         </div>
-        <div className="mb-3"><Badge status={d.status}/></div>
+        <div className="mb-3"><Badge status={displayStatus(d)}/></div>
         {/* Battery */}
         <div className={`p-2.5 mb-2 ${dark?"bg-charcoal":"bg-[#F4F0E8]"}`}>
           <div className={`font-mono text-[7.5px] tracking-widest uppercase mb-0.5 ${dark?"text-warm-grey":"text-[#6F6A61]"}`}>BATTERY</div>
@@ -166,11 +179,11 @@ function DevicePopup({ d, dark, onClose, onView }:{ d:Device; dark:boolean; onCl
         </div>
         {/* Last threat scan */}
         {d.status!=="OFFLINE"&&(
-          <div className={`p-2.5 mb-2 ${d.status==="ALERT"?"bg-signal-red/10 border border-signal-red/30":d.lastResult==="CAUTION"||d.lastResult==="ALCOHOL"?"bg-caution/10 border border-caution/30":"bg-safe/10 border border-safe/30"}`}>
+          <div className={`p-2.5 mb-2 ${d.status==="ALERT"&&d.lastResult!=="ALCOHOL"?"bg-signal-red/10 border border-signal-red/30":d.lastResult==="CAUTION"||d.lastResult==="ALCOHOL"?"bg-caution/10 border border-caution/30":"bg-safe/10 border border-safe/30"}`}>
             <div className={`font-mono text-[7.5px] tracking-widest uppercase mb-0.5 ${dark?"text-warm-grey":"text-[#6F6A61]"}`}>LAST SCAN RESULT</div>
             <div className="flex items-center gap-2" style={{color:rc}}>
               <ThreatIcon state={d.lastResult} size={34} className="flex-shrink-0" />
-              <div className="font-heading text-[13px] font-semibold tracking-widest">{d.lastResult}</div>
+              <div className="font-heading text-[13px] font-semibold tracking-widest">{displayResult(d.lastResult)}</div>
             </div>
           </div>
         )}
@@ -224,7 +237,7 @@ export default function Dashboard({ theme, devices, incidents, logs, summary, on
   const DEVICE_KEYWORDS = ["battery","sensor","calibr","connection","temperature","humidity","heartbeat","operator","handover","environmental","noise","firmware"];
   const filteredLogs =
     logFilter==="ALERTS"
-      ? logs.filter(l=>l.level==="ALERT")
+      ? logs.filter(l=>l.level==="ALERT" || DETECTION_KEYWORDS.some(keyword => l.event.toLowerCase().includes(keyword)))
       : logFilter==="DEVICES"
         ? logs.filter(l=>DEVICE_KEYWORDS.some(k=>l.event.toLowerCase().includes(k)))
         : logs;
@@ -308,20 +321,20 @@ export default function Dashboard({ theme, devices, incidents, logs, summary, on
         </div>
 
         {/* ── Incident banner ── */}
-        {incidents.filter(i=>i.status!=="RESOLVED").length>0&&(
+        {incidents.filter(i=>i.status!=="RESOLVED"&&i.type!=="ALCOHOL").length>0&&(
           <div className="border border-signal-red/35 bg-signal-red/5 p-4 fade-up">
             <div className="flex items-center gap-2.5 mb-3">
               <AlertTriangle className="w-4 h-4 text-signal-red flex-shrink-0"/>
               <span className="font-heading text-[12px] tracking-[.14em] font-semibold text-signal-red">ACTIVE INCIDENTS</span>
               <span className="ml-auto font-mono text-[8.5px] text-signal-red border border-signal-red/30 px-2 py-0.5 blink">
-                {incidents.filter(i=>i.status!=="RESOLVED").length} ACTIVE
+                {incidents.filter(i=>i.status!=="RESOLVED"&&i.type!=="ALCOHOL").length} ACTIVE
               </span>
             </div>
-            {incidents.filter(i=>i.status!=="RESOLVED").map(inc=>(
+            {incidents.filter(i=>i.status!=="RESOLVED"&&i.type!=="ALCOHOL").map(inc=>(
               <div key={inc.id} className={`flex items-center gap-3 px-3 py-2 mb-2 last:mb-0 ${dark?"bg-charcoal":"bg-white"} border-l-2 border-l-signal-red`}>
                 <div className="flex-1 min-w-0">
                   <span className="font-mono text-[9px] text-signal-red">#{inc.id}</span>
-                  <span className={`font-mono text-[9px] ${muted} ml-3`}>{inc.type} // {inc.location}</span>
+                  <span className={`font-mono text-[9px] ${muted} ml-3`}>{displayResult(inc.type)} // {inc.location}</span>
                 </div>
                 <button onClick={onViewAnomaly} className="font-mono text-[8.5px] text-signal-red border border-signal-red/30 px-2 py-1 hover:bg-signal-red hover:text-ivory transition-all flex-shrink-0">VIEW</button>
               </div>
@@ -369,7 +382,7 @@ export default function Dashboard({ theme, devices, incidents, logs, summary, on
                     style={{background:i%2===0?(dark?"rgba(29,32,35,.25)":"rgba(244,240,234,.35)"):undefined}}>
                     <td className="px-4 py-2.5 font-mono text-[9.5px] text-brass whitespace-nowrap">{l.timestamp}</td>
                     <td className="px-4 py-2.5 font-mono text-[9.5px] text-brass whitespace-nowrap">{l.device}</td>
-                    <td className={`px-4 py-2.5 font-mono text-[9.5px] ${text} max-w-[240px] truncate`}>{l.event}</td>
+                    <td className={`px-4 py-2.5 font-mono text-[9.5px] ${text} max-w-[240px] truncate`}>{displayEvent(l.event)}</td>
                     <td className={`px-4 py-2.5 font-mono text-[9.5px] ${muted} whitespace-nowrap`}>{l.location}</td>
                     <td className="px-4 py-2.5 whitespace-nowrap"><LogStatus level={l.level}/></td>
                   </tr>

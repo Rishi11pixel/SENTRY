@@ -23,6 +23,10 @@ const GLOW: Record<IncStatus, string> = {
   RESOLVED:   "0 0 10px #20C87899, 0 0 24px #20C87844",
 };
 
+function displayResult(result: string) {
+  return result === "CAUTION" ? "WEATHER DRIFT" : result;
+}
+
 export default function ThreatHistory({ theme, incidents }: { theme: "dark" | "light"; incidents: Incident[] }) {
   const dark  = theme === "dark";
   const bg    = dark ? "bg-obsidian"   : "bg-[#F1EDE3]";
@@ -119,7 +123,7 @@ export default function ThreatHistory({ theme, incidents }: { theme: "dark" | "l
                     <span className="flex-shrink-0" style={iconStyle}>
                       <ThreatIcon state={inc.type} size={58} />
                     </span>
-                    <div className="font-display text-[28px] tracking-widest leading-none">{inc.type}</div>
+                    <div className="font-display text-[28px] tracking-widest leading-none">{displayResult(inc.type)}</div>
                   </div>
 
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-2">

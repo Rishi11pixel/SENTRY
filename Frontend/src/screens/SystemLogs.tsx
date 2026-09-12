@@ -4,6 +4,11 @@ import type { LogEntry } from "../data";
 
 const DEVICE_KEYWORDS = ["battery","sensor","calibr","connection","temperature","humidity","heartbeat","operator","handover","environmental","noise","firmware"];
 const LC: Record<string, string> = { ALERT:"#B3262E", WARNING:"#D99A27", SUCCESS:"#20C878", INFO:"#C49A4A" };
+const DETECTION_KEYWORDS = ["safe", "caution", "weather", "alcohol", "sanitizer", "narcotic", "explosive"];
+
+function displayEvent(event: string) {
+  return event.replace(/\bCAUTION\b/gi, "WEATHER DRIFT");
+}
 
 export default function SystemLogs({ theme, logs }: { theme: "dark" | "light"; logs: LogEntry[] }) {
   const dark  = theme === "dark";
@@ -16,7 +21,7 @@ export default function SystemLogs({ theme, logs }: { theme: "dark" | "light"; l
   const bdr  = dark ? "border-warm-grey/10" : "border-obsidian/8";
 
   const filtered =
-    f === "ALERTS"  ? logs.filter(l => l.level === "ALERT") :
+    f === "ALERTS"  ? logs.filter(l => l.level === "ALERT" || DETECTION_KEYWORDS.some(keyword => l.event.toLowerCase().includes(keyword))) :
     f === "DEVICES" ? logs.filter(l => DEVICE_KEYWORDS.some(k => l.event.toLowerCase().includes(k))) :
     logs;
 
@@ -100,7 +105,7 @@ export default function SystemLogs({ theme, logs }: { theme: "dark" | "light"; l
                       style={{ background: i % 2 === 0 ? (dark ? "rgba(29,32,35,.25)" : "rgba(244,240,234,.35)") : undefined }}>
                       <td className="px-4 py-2.5 font-mono text-[9.5px] text-brass whitespace-nowrap">{l.timestamp}</td>
                       <td className="px-4 py-2.5 font-mono text-[9.5px] text-brass whitespace-nowrap">{l.device}</td>
-                      <td className={`px-4 py-2.5 font-mono text-[9.5px] ${text} max-w-[240px] truncate`}>{l.event}</td>
+                      <td className={`px-4 py-2.5 font-mono text-[9.5px] ${text} max-w-[240px] truncate`}>{displayEvent(l.event)}</td>
                       <td className={`px-4 py-2.5 font-mono text-[9.5px] ${muted} whitespace-nowrap`}>{l.location}</td>
                       <td className="px-4 py-2.5 whitespace-nowrap">
                         <span className="font-mono text-[8.5px] tracking-widest px-1.5 py-[2px]"

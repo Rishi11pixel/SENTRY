@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { X } from "lucide-react";
 import { acknowledgeIncident, getDashboardSummary, getDevices, getIncidents, getLogs, resolveIncident } from "./api";
 import ThreatIcon from "./components/ThreatIcon";
@@ -15,13 +15,14 @@ import SystemLogs from "./screens/SystemLogs";
 import type { Device, Incident, LogEntry } from "./data";
 
 /* ── Toast ── */
-interface Toast { id:number; msg:string; type:"alert"|"info"|"success"; state:string; }
+interface Toast { id:number; msg:string; type:"alert"|"warning"|"info"|"success"; state:string; }
 function ToastBar({ toasts, onDismiss }:{ toasts:Toast[]; onDismiss:(id:number)=>void }) {
   return (
     <div className="fixed top-4 right-4 z-[60] space-y-2 pointer-events-none">
       {toasts.map(t=>(
         <div key={t.id} className={`slide-in flex items-center gap-3 px-4 py-3 min-w-[280px] pointer-events-auto border shadow-xl ${
           t.type==="alert" ?"bg-signal-red border-signal-red/60 text-ivory"
+          :t.type==="warning"?"bg-caution border-caution/60 text-obsidian"
           :t.type==="success"?"bg-safe/90 border-safe/50 text-ivory"
           :"bg-charcoal border-warm-grey/20 text-ivory"
         }`}>
@@ -47,6 +48,7 @@ export default function App() {
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [logs, setLogs]           = useState<LogEntry[]>([]);
   const [summary, setSummary]     = useState({ connectedDevices: 0, online: 0, offline: 0, activeAlerts: 0 });
+  const seenIncidentIds = useRef<Set<string> | null>(null);
 
   function addToast(msg:string, type:Toast["type"]="info", state="SAFE") {
     const id=toastId+1; setToastId(id);
@@ -67,6 +69,21 @@ export default function App() {
         setSummary(nextSummary);
         setIncidents(nextIncidents);
         setLogs(nextLogs);
+
+        const currentIds = new Set(nextIncidents.map(incident => incident.id));
+        if (seenIncidentIds.current) {
+          nextIncidents
+            .filter(incident => !seenIncidentIds.current?.has(incident.id) && incident.status !== "RESOLVED" && incident.type !== "ALCOHOL")
+            .forEach(incident => {
+              const isWarning = incident.type === "ALCOHOL";
+              addToast(
+                `${isWarning ? "WARNING" : "ANOMALY DETECTED"} — ${incident.device} / ${incident.location} — ${incident.type} ${incident.confidence}%`,
+                isWarning ? "warning" : "alert",
+                incident.type,
+              );
+            });
+        }
+        seenIncidentIds.current = currentIds;
       } catch {
         // Keep the last known state while the local backend is unavailable.
       }
@@ -90,6 +107,10 @@ export default function App() {
     return <Login onLogin={()=>setLoggedIn(true)} />;
   }
 
+  const activeAlertCount = incidents.filter(incident => incident.status !== "RESOLVED" && incident.type !== "ALCOHOL").length;
+  const activeThreatIncident = incidents.find(incident => incident.status !== "RESOLVED" && incident.type !== "ALCOHOL");
+  const displaySummary = { ...summary, activeAlerts: activeAlertCount };
+
   return (
     <div className="dark flex h-screen overflow-hidden bg-obsidian">
       <Sidebar
@@ -97,7 +118,7 @@ export default function App() {
         onNav={s=>{setScreen(s);setMobileNav(false);}}
         mobileOpen={mobileNav}
         onMobileToggle={()=>setMobileNav(o=>!o)}
-        alertCount={summary.activeAlerts}
+        alertCount={activeAlertCount}
       />
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
@@ -113,7 +134,7 @@ export default function App() {
               className="flex items-center gap-1.5 hover:opacity-80 transition-opacity">
               <span className="w-1.5 h-1.5 rounded-full bg-signal-red blink"/>
               <span className="font-mono text-[8.5px] text-signal-red tracking-widest hidden sm:block">
-                {summary.activeAlerts} ACTIVE ALERTS
+                {activeAlertCount} ACTIVE ALERTS
               </span>
             </button>
             <div className="font-mono text-[8.5px] tracking-widest hidden sm:block text-warm-grey/50">v1.0.0</div>
@@ -124,7 +145,7 @@ export default function App() {
         <div className="flex-1 overflow-y-auto">
           {screen==="dashboard"&&(
             <Dashboard theme="dark"
-              devices={devices} incidents={incidents} logs={logs} summary={summary}
+              devices={devices} incidents={incidents} logs={logs} summary={displaySummary}
               onViewDevice={id=>{setDevId(id);setScreen("device-info");}}
               onViewAnomaly={()=>setScreen("anomalies")}/>
           )}
@@ -137,7 +158,7 @@ export default function App() {
           {screen==="devices"&&<Devices theme="dark" devices={devices} onViewDevice={id=>{setDevId(id);setScreen("device-info");}}/>}
           {screen==="anomalies"&&(
             <AnomalyAlert theme="dark"
-              incident={incidents.find(item => item.status !== "RESOLVED") || incidents[0]}
+              incident={activeThreatIncident}
               onAcknowledge={async id=>{ await handleAcknowledge(id); addToast("Issue recognised — RAIL_ADM_001","success","SAFE"); }}
               onResolved={async id=>{ await handleResolve(id); addToast("Incident resolved — moved to Threat History","success","SAFE"); setScreen("threat-history"); }}/>
           )}
