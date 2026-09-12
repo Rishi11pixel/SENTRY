@@ -46,6 +46,32 @@ CLASSES = [
     "NARCOTIC",
 ]
 
+THREAT_INDICES = np.array([CLASSES.index("EXPLOSIVE"), CLASSES.index("NARCOTIC")])
+
+
+def compute_threat_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict:
+    true_threat = np.isin(y_true, THREAT_INDICES)
+    predicted_threat = np.isin(y_pred, THREAT_INDICES)
+    tn, fp, fn, tp = confusion_matrix(
+        true_threat,
+        predicted_threat,
+        labels=[False, True],
+    ).ravel()
+    threat_recall = tp / (tp + fn) if tp + fn else 0.0
+    threat_fnr = fn / (tp + fn) if tp + fn else 0.0
+    threat_precision = tp / (tp + fp) if tp + fp else 0.0
+    return {
+        "threat_definition": "EXPLOSIVE + NARCOTIC",
+        "non_threat_definition": "SAFE + WEATHER + ALCOHOL",
+        "TP": int(tp),
+        "TN": int(tn),
+        "FP": int(fp),
+        "FN": int(fn),
+        "threat_recall": float(threat_recall),
+        "threat_false_negative_rate": float(threat_fnr),
+        "threat_precision": float(threat_precision),
+    }
+
 
 def load_final_test_data() -> pd.DataFrame:
     df = pd.read_csv(TEST_DATA_PATH)
@@ -93,6 +119,7 @@ def compute_classification_metrics(y_true: np.ndarray, y_pred: np.ndarray, label
         "weighted_f1": float(weighted_f1),
         "per_class": per_class,
         "confusion_matrix": cm.astype(int).tolist(),
+        "threat_safety": compute_threat_metrics(y_true, y_pred),
     }
     return metrics
 

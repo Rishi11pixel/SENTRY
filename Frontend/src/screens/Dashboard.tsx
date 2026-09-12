@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Cpu, Wifi, WifiOff, AlertTriangle, Activity, ChevronDown, X, Download } from "lucide-react";
-import type { Device, Incident, LogEntry } from "../data";
+import { truncateConfidencePercent, type Device, type Incident, type LogEntry } from "../data";
 import ThreatIcon from "../components/ThreatIcon";
 
 /* ── helpers ── */
@@ -191,7 +191,7 @@ function DevicePopup({ d, dark, onClose, onView }:{ d:Device; dark:boolean; onCl
         <div className={`p-2.5 mb-3 ${dark?"bg-charcoal":"bg-[#F4F0E8]"}`}>
           <div className={`font-mono text-[7.5px] tracking-widest uppercase mb-0.5 ${dark?"text-warm-grey":"text-[#6F6A61]"}`}>CONFIDENCE</div>
           <div className={`font-mono text-[14px] font-medium ${dark?"text-ivory":"text-obsidian"}`}>
-            {d.status==="OFFLINE"?"—":`${d.confidence}%`}
+            {d.status==="OFFLINE"?"—":`${truncateConfidencePercent(d.confidence)}%`}
           </div>
         </div>
         <button onClick={onView} className="btn-primary w-full text-[11px]">VIEW FULL DEVICE</button>

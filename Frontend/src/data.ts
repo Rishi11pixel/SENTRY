@@ -69,6 +69,10 @@ export interface Incident {
   latestReading?: SensorReading | null;
 }
 
+export function truncateConfidencePercent(value: number): string {
+  return (Math.trunc(value * 100) / 100).toFixed(2);
+}
+
 export const DETECTION_DIST = [
   { name:"SAFE",           value:847, color:"#20C878" },
   { name:"CAUTION",        value:43,  color:"#D99A27" },

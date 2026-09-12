@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { Incident } from "../data";
+import { truncateConfidencePercent, type Incident } from "../data";
 import ThreatIcon from "../components/ThreatIcon";
 
 type IncStatus = "LIVE" | "RECOGNISED" | "RESOLVED";
@@ -130,7 +130,7 @@ export default function ThreatHistory({ theme, incidents }: { theme: "dark" | "l
                     {[
                       { l: "LOCATION",   v: inc.location },
                       { l: "PLATFORM",   v: inc.platform },
-                      { l: "CONFIDENCE", v: `${inc.confidence}%` },
+                      { l: "CONFIDENCE", v: `${truncateConfidencePercent(inc.confidence)}%` },
                     ].map(r => (
                       <div key={r.l} className={`p-2 ${dark ? "bg-charcoal" : "bg-[#F4F0E8]"}`}>
                         <div className={`font-mono text-[7.5px] tracking-widest ${muted} mb-0.5`}>{r.l}</div>

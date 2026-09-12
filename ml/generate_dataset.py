@@ -9,6 +9,7 @@ from config import (
     COMPENSATION_ALPHA_T,
     FEATURES,
     H_REF,
+    MODEL_BASELINES,
     N_SAMPLES,
     SAMPLE_INTERVAL_S,
     T_REF,
@@ -24,7 +25,7 @@ TEST_PER_CLASS = 2_400
 TRAIN_SEED = 87
 TEST_SEED = 1807
 SENSOR_NAMES = ["VMQ2", "VMQ3", "VMQ135", "VSEN0567"]
-BASELINE = np.array([0.36, 0.39, 0.42, 0.34], dtype=np.float32)
+BASELINE = np.array([MODEL_BASELINES[sensor] for sensor in SENSOR_NAMES], dtype=np.float32)
 NOISE = np.array([0.012, 0.014, 0.013, 0.012], dtype=np.float32)
 
 

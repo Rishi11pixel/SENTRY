@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { AlertTriangle, MapPin, Cpu, CheckCircle, X } from "lucide-react";
 import ThreatIcon from "../components/ThreatIcon";
-import type { Incident } from "../data";
+import { truncateConfidencePercent, type Incident } from "../data";
 
 interface Props {
   theme: "dark" | "light";
@@ -84,7 +84,7 @@ export default function AnomalyAlert({ theme, incident, onAcknowledge, onResolve
                   </div>
                 </div>
                 <div className={`font-mono text-[10px] tracking-widest ${muted} mb-5`}>
-                  CONFIDENCE: <span className="text-signal-red font-medium">{activeIncident.confidence}%</span>
+                  CONFIDENCE: <span className="text-signal-red font-medium">{truncateConfidencePercent(activeIncident.confidence)}%</span>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                   {[

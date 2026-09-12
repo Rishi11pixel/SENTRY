@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { ArrowLeft, Battery, Signal, MapPin } from "lucide-react";
 import { getDevicePredictions } from "../api";
-import type { Device } from "../data";
-import type { PredictionResult } from "../data";
+import { truncateConfidencePercent, type Device, type PredictionResult } from "../data";
 import ThreatIcon from "../components/ThreatIcon";
 
 interface Props { deviceId: string; theme: "dark" | "light"; devices: Device[]; onBack: () => void; onLiveTracking: () => void; }
@@ -161,7 +160,7 @@ export default function DeviceInfo({ deviceId, theme, devices, onBack, onLiveTra
                           </div>
                         </td>
                         <td className="py-2.5 font-mono text-[11px] font-medium" style={{ color: c }}>
-                          {a.confidence}%
+                          {truncateConfidencePercent(a.confidence)}%
                         </td>
                       </tr>
                     );

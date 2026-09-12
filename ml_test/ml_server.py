@@ -3,6 +3,8 @@ import numpy as np
 import tensorflow as tf
 from pathlib import Path
 
+from ml.config import MODEL_BASELINES, REAL_BASELINES
+
 
 # ============================================================
 # FLASK APP
@@ -90,26 +92,12 @@ for i, label in enumerate(label_classes):
 # this section MUST be changed after confirming its calibration.
 # ============================================================
 
-MODEL_BASELINES = {
-    "MQ2": 0.36,
-    "MQ3": 0.39,
-    "MQ135": 0.42
-}
-
-
 # ============================================================
 # REAL ESP32 SENSOR BASELINES
 # ============================================================
 #
 # These are raw ADC baselines from the ESP32.
 # ============================================================
-
-REAL_BASELINES = {
-    "MQ2": 3069.0,
-    "MQ3": 530.33,
-    "MQ135": 1043.27
-}
-
 
 # ============================================================
 # ENVIRONMENTAL COMPENSATION COEFFICIENTS

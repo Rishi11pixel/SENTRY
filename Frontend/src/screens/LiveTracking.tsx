@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { ChevronDown, AlertTriangle } from "lucide-react";
 import { getDevicePredictions } from "../api";
-import type { Device } from "../data";
-import type { PredictionResult } from "../data";
+import { truncateConfidencePercent, type Device, type PredictionResult } from "../data";
 import ThreatIcon from "../components/ThreatIcon";
 
 const RESULT_COLOR: Record<string, string> = {
@@ -191,7 +190,7 @@ export default function LiveTracking({ theme, devices }: { theme: "dark" | "ligh
                   <div>
                     <div className={`font-mono text-[8px] tracking-widest uppercase ${muted} mb-0.5`}>CONFIDENCE</div>
                     <div className="font-mono text-[22px] leading-none font-medium" style={{ color: anomalyColor }}>
-                      {lastAnomaly.confidence}%
+                      {truncateConfidencePercent(lastAnomaly.confidence)}%
                     </div>
                   </div>
                 </div>
@@ -246,7 +245,7 @@ export default function LiveTracking({ theme, devices }: { theme: "dark" | "ligh
                                 </div>
                             </td>
                             <td className="py-2 font-mono text-[9.5px]" style={{ color: c }}>
-                              {a.confidence * 100}%
+                              {truncateConfidencePercent(a.confidence * 100)}%
                             </td>
                           </tr>
                         );

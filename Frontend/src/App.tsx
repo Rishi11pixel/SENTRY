@@ -12,7 +12,7 @@ import AnomalyAlert from "./screens/AnomalyAlert";
 import ThreatHistory from "./screens/ResponseCenter";
 import Devices from "./screens/Devices";
 import SystemLogs from "./screens/SystemLogs";
-import type { Device, Incident, LogEntry } from "./data";
+import { truncateConfidencePercent, type Device, type Incident, type LogEntry } from "./data";
 
 /* ── Toast ── */
 interface Toast { id:number; msg:string; type:"alert"|"warning"|"info"|"success"; state:string; }
@@ -77,7 +77,7 @@ export default function App() {
             .forEach(incident => {
               const isWarning = incident.type === "ALCOHOL";
               addToast(
-                `${isWarning ? "WARNING" : "ANOMALY DETECTED"} — ${incident.device} / ${incident.location} — ${incident.type} ${incident.confidence}%`,
+                `${isWarning ? "WARNING" : "ANOMALY DETECTED"} — ${incident.device} / ${incident.location} — ${incident.type} ${truncateConfidencePercent(incident.confidence)}%`,
                 isWarning ? "warning" : "alert",
                 incident.type,
               );

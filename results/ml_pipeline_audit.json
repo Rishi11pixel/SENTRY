@@ -1,0 +1,812 @@
+{
+  "audit_timestamp": "2026-09-12T23:32:24.924829",
+  "overall_verdict": "PASS",
+  "sections": {
+    "dataset_integrity": {
+      "items": [
+        {
+          "check": "Training dataset size",
+          "result": "PASS",
+          "expected": 60000,
+          "actual": 60000,
+          "details": "Training set has 60000 samples as expected"
+        },
+        {
+          "check": "Final test dataset size",
+          "result": "PASS",
+          "expected": 12000,
+          "actual": 12000,
+          "details": "Final test set has 12000 samples as expected"
+        },
+        {
+          "check": "Feature names",
+          "result": "PASS",
+          "details": "All 7 features present in correct order"
+        },
+        {
+          "check": "Training set class balance",
+          "result": "PASS",
+          "details": "Each class has exactly 12000 samples"
+        },
+        {
+          "check": "Final test set class balance",
+          "result": "PASS",
+          "details": "Each class has exactly 2400 samples"
+        },
+        {
+          "check": "Missing values (NaN)",
+          "result": "PASS",
+          "details": "No NaN values found in training or test sets"
+        },
+        {
+          "check": "Infinite values",
+          "result": "PASS",
+          "details": "No infinite values found"
+        },
+        {
+          "check": "Duplicate rows",
+          "result": "PASS",
+          "details": "No exact duplicate rows found"
+        }
+      ],
+      "overall": "PASS"
+    },
+    "data_leakage": {
+      "items": [
+        {
+          "check": "Test data in training data",
+          "result": "PASS",
+          "details": "No overlap detected"
+        },
+        {
+          "check": "Scaler fitted on training split only",
+          "result": "PASS",
+          "details": "Saved scaler exactly matches StandardScaler fitted on the training script's float32 training split",
+          "mean_match": true,
+          "scale_match": true,
+          "max_mean_diff": 0.0,
+          "max_scale_diff": 0.0
+        },
+        {
+          "check": "Label class order",
+          "result": "PASS",
+          "expected": [
+            "SAFE",
+            "WEATHER",
+            "ALCOHOL",
+            "EXPLOSIVE",
+            "NARCOTIC"
+          ],
+          "actual": [
+            "SAFE",
+            "WEATHER",
+            "ALCOHOL",
+            "EXPLOSIVE",
+            "NARCOTIC"
+          ],
+          "details": "Label order matches expected configuration"
+        }
+      ],
+      "overall": "PASS"
+    },
+    "feature_calculations": {
+      "items": [
+        {
+          "check": "7-feature vector structure",
+          "result": "PASS",
+          "details": "Features: [VMQ2, VMQ3, VMQ135, VSEN0567, dVdt_max, temperature, humidity]",
+          "feature_count": 7
+        },
+        {
+          "check": "dV/dt calculation window",
+          "result": "PASS",
+          "details": "Uses first 4 samples (0.0s, 0.1s, 0.2s, 0.3s) with dt=0.1s",
+          "sampling_interval_ms": 100,
+          "sampling_interval_s": 0.1,
+          "early_samples": 4,
+          "expected_slopes": 3
+        },
+        {
+          "check": "Final averaging window",
+          "result": "PASS",
+          "details": "Uses last 5 readings for 0.5-second averaging window",
+          "averaging_window_samples": 5,
+          "total_samples_per_window": 30
+        },
+        {
+          "check": "Environmental compensation timing",
+          "result": "PASS",
+          "details": "Compensation applied AFTER baseline conversion, BEFORE dV/dt calculation",
+          "compensation_reference_H": 50.0,
+          "compensation_reference_T": 25.0
+        },
+        {
+          "check": "Feature value ranges",
+          "result": "PASS",
+          "details": "Feature ranges are within expected bounds",
+          "ranges_check": {
+            "VMQ2": [
+              0.2540737034765215,
+              1.208623637161411
+            ],
+            "VMQ3": [
+              0.2946929523843268,
+              2.395877678772244
+            ],
+            "VMQ135": [
+              0.3012525422969409,
+              2.2419429307680887
+            ],
+            "VSEN0567": [
+              0.2333030970815607,
+              2.020767751870585
+            ],
+            "dVdt_max": [
+              0.0926626785496276,
+              8.147252747252747
+            ],
+            "temperature": [
+              10.0,
+              40.0
+            ],
+            "humidity": [
+              20.0,
+              90.0
+            ]
+          }
+        }
+      ],
+      "overall": "PASS"
+    },
+    "sensor_baseline_conversion": {
+      "items": [
+        {
+          "check": "Model baselines",
+          "result": "PASS",
+          "details": "Model-space baselines configured correctly",
+          "model_baselines": {
+            "MQ2": 0.82,
+            "MQ3": 0.74,
+            "MQ135": 0.91,
+            "SEN0567": 0.34
+          }
+        },
+        {
+          "check": "Real baselines (ADC-to-model conversion)",
+          "result": "PASS",
+          "details": "Real-world baseline values for conversion formula",
+          "real_baselines": {
+            "MQ2": 3069.0,
+            "MQ3": 530.33,
+            "MQ135": 1043.27
+          }
+        },
+        {
+          "check": "Baseline conversion formula",
+          "result": "PASS",
+          "details": "V_model = (Raw / RealBaseline) * ModelBaseline",
+          "formula": "V_model = (Raw / RealBaseline) * ModelBaseline",
+          "order_of_operations": "division then multiplication"
+        },
+        {
+          "check": "SEN0567 handling",
+          "result": "PASS",
+          "details": "SEN0567 assumed to arrive in model-space voltage (no ADC conversion)",
+          "sen0567_assumption": "already_model_space"
+        },
+        {
+          "check": "Baseline source parity",
+          "result": "PASS",
+          "details": "Dataset generation and inference server consume the centralized active baseline definitions",
+          "active_model_baselines": {
+            "MQ2": 0.82,
+            "MQ3": 0.74,
+            "MQ135": 0.91,
+            "SEN0567": 0.34
+          },
+          "single_source": "ml/config.py"
+        }
+      ],
+      "overall": "PASS"
+    },
+    "environmental_compensation": {
+      "items": [
+        {
+          "check": "Compensation equation",
+          "result": "PASS",
+          "details": "V_comp = V_raw - alpha_H*(H - 50) - alpha_T*(T - 25)",
+          "formula": "V_comp = V_raw - alpha_H*(H - 50.0) - alpha_T*(T - 25.0)",
+          "coefficient_status": "Prototype synthetic simulation parameters, not experimentally calibrated"
+        },
+        {
+          "check": "Compensation coefficients",
+          "result": "PASS",
+          "details": "Sensor-specific coefficients configured",
+          "coefficients": {
+            "MQ2": {
+              "alpha_H": 0.0018,
+              "alpha_T": 0.0008
+            },
+            "MQ3": {
+              "alpha_H": 0.0014,
+              "alpha_T": 0.0007
+            },
+            "MQ135": {
+              "alpha_H": 0.0022,
+              "alpha_T": 0.0009
+            },
+            "SEN0567": {
+              "alpha_H": 0.0016,
+              "alpha_T": 0.0008
+            }
+          },
+          "source": "Prototype synthetic parameters"
+        },
+        {
+          "check": "Compensation timing",
+          "result": "PASS",
+          "details": "Applied AFTER baseline conversion, BEFORE dV/dt calculation",
+          "sequence": [
+            "baseline_conversion",
+            "environmental_compensation",
+            "dvdt_calculation"
+          ]
+        },
+        {
+          "check": "Reference values",
+          "result": "PASS",
+          "details": "Reference humidity and temperature match configuration",
+          "h_reference": 50.0,
+          "t_reference": 25.0
+        }
+      ],
+      "overall": "PASS"
+    },
+    "synthetic_data_generation": {
+      "items": [
+        {
+          "check": "Data generation methodology",
+          "result": "PASS",
+          "details": "Synthetic data generated with class-specific response patterns",
+          "classes_generated": 5,
+          "samples_per_class": 12000
+        },
+        {
+          "check": "Synthetic vs real data",
+          "result": "PASS",
+          "details": "Pipeline uses SYNTHETIC data only for training and testing",
+          "data_type": "SYNTHETIC_ONLY",
+          "note": "Not laboratory-calibrated real-world data"
+        },
+        {
+          "check": "Environmental variation",
+          "result": "PASS",
+          "details": "Includes environmental conditions (temperature, humidity) variation",
+          "weather_conditions": [
+            "dry",
+            "normal",
+            "humid",
+            "very_humid",
+            "cold",
+            "hot",
+            "hot_humid",
+            "hot_dry"
+          ],
+          "environmental_compensation": "Applied in generation"
+        },
+        {
+          "check": "Noise and signal characteristics",
+          "result": "PASS",
+          "details": "Includes correlated noise, sensor gain/offset variation",
+          "noise_types": [
+            "correlated_noise",
+            "white_noise",
+            "gain_variation",
+            "offset_variation"
+          ],
+          "adc_quantization": "Simulated (8-bit or 13-bit ADC)"
+        }
+      ],
+      "overall": "PASS"
+    },
+    "training_pipeline": {
+      "items": [
+        {
+          "check": "Train/validation split",
+          "result": "PASS",
+          "details": "80/20 stratified split with random_state=42",
+          "split_ratio": "80/20",
+          "stratification": true,
+          "random_state": 42
+        },
+        {
+          "check": "Scaler fitting scope",
+          "result": "PASS",
+          "details": "StandardScaler fitted ONLY on training split (80%)",
+          "fitted_on": "training_split_only"
+        },
+        {
+          "check": "TinyML architecture",
+          "result": "PASS",
+          "details": "Input(7) -> Dense(16, ReLU) -> Dense(8, ReLU) -> Dense(5, softmax)",
+          "input_features": 7,
+          "hidden_layer_1": {
+            "units": 16,
+            "activation": "relu"
+          },
+          "hidden_layer_2": {
+            "units": 8,
+            "activation": "relu"
+          },
+          "output_layer": {
+            "units": 5,
+            "activation": "softmax"
+          },
+          "parameter_count": "small_tinyml_compatible"
+        },
+        {
+          "check": "Random Forest configuration",
+          "result": "PASS",
+          "details": "n_estimators=150, max_depth=8, random_state=42",
+          "n_estimators": 150,
+          "max_depth": 8,
+          "random_state": 42
+        },
+        {
+          "check": "Class encoding",
+          "result": "PASS",
+          "details": "Classes encoded as indices 0-4 matching configured order",
+          "class_indices": {
+            "SAFE": 0,
+            "WEATHER": 1,
+            "ALCOHOL": 2,
+            "EXPLOSIVE": 3,
+            "NARCOTIC": 4
+          }
+        }
+      ],
+      "overall": "PASS"
+    },
+    "final_test_evaluation": {
+      "items": [
+        {
+          "check": "Final test set usage",
+          "result": "PASS",
+          "details": "Final test set used ONLY for evaluation, not training",
+          "final_test_set_only": true
+        },
+        {
+          "check": "Random Forest performance",
+          "result": "PASS",
+          "details": "RF Accuracy: 0.8945, Macro F1: 0.8950",
+          "accuracy": 0.8945,
+          "macro_f1": 0.8949843604658572
+        },
+        {
+          "check": "TinyML Float32 performance",
+          "result": "PASS",
+          "details": "TinyML Accuracy: 0.8828, Macro F1: 0.8826",
+          "accuracy": 0.88275,
+          "macro_f1": 0.8826090974484876,
+          "degradation_from_rf": {
+            "accuracy_delta": -0.011749999999999927,
+            "f1_delta": -0.012375263017369575
+          }
+        },
+        {
+          "check": "Per-class recall (safety critical)",
+          "result": "PASS",
+          "details": "All classes achieve >80% recall",
+          "per_class_recall": {
+            "SAFE": {
+              "precision": 0.8557536466774717,
+              "recall": 0.88,
+              "f1": 0.8677074774034511,
+              "support": 2400
+            },
+            "WEATHER": {
+              "precision": 0.963620614984842,
+              "recall": 0.9270833333333334,
+              "f1": 0.9449989382034403,
+              "support": 2400
+            },
+            "ALCOHOL": {
+              "precision": 0.8455976180348788,
+              "recall": 0.8283333333333334,
+              "f1": 0.8368764470637761,
+              "support": 2400
+            },
+            "EXPLOSIVE": {
+              "precision": 0.8636709824828637,
+              "recall": 0.945,
+              "f1": 0.9025069637883009,
+              "support": 2400
+            },
+            "NARCOTIC": {
+              "precision": 0.8904719501335708,
+              "recall": 0.8333333333333334,
+              "f1": 0.8609556607834696,
+              "support": 2400
+            }
+          }
+        }
+      ],
+      "overall": "PASS"
+    },
+    "threat_metrics": {
+      "items": [
+        {
+          "check": "Threat definition",
+          "result": "PASS",
+          "details": "THREAT = EXPLOSIVE + NARCOTIC (2400+2400=4800 samples)",
+          "threat_classes": [
+            "EXPLOSIVE",
+            "NARCOTIC"
+          ],
+          "non_threat_classes": [
+            "SAFE",
+            "WEATHER",
+            "ALCOHOL"
+          ]
+        },
+        {
+          "check": "Threat metrics from actual model predictions",
+          "result": "PASS",
+          "details": "RF, TinyML Float32, and TinyML INT8 metrics were recalculated from fresh final-test predictions",
+          "models": {
+            "random_forest": {
+              "TP": 4313,
+              "TN": 6927,
+              "FP": 273,
+              "FN": 487,
+              "threat_recall": 0.8985416666666667,
+              "threat_fnr": 0.10145833333333333,
+              "threat_precision": 0.9404709986916703
+            },
+            "tinyml_float32": {
+              "TP": 4408,
+              "TN": 6736,
+              "FP": 464,
+              "FN": 392,
+              "threat_recall": 0.9183333333333333,
+              "threat_fnr": 0.08166666666666667,
+              "threat_precision": 0.9047619047619048
+            },
+            "tinyml_int8": {
+              "TP": 4348,
+              "TN": 6788,
+              "FP": 412,
+              "FN": 452,
+              "threat_recall": 0.9058333333333334,
+              "threat_fnr": 0.09416666666666666,
+              "threat_precision": 0.9134453781512605
+            }
+          }
+        },
+        {
+          "check": "Binary confusion metrics",
+          "result": "PASS",
+          "details": "TinyML Float32: TP=4408, TN=6736, FP=464, FN=392",
+          "true_positives": 4408,
+          "false_positives": 464,
+          "false_negatives": 392
+        },
+        {
+          "check": "Threat recall (detection rate)",
+          "result": "PASS",
+          "details": "Threat Recall: 0.9183 (identifying actual threats)",
+          "threat_recall": 0.9183333333333333,
+          "interpretation": "Percentage of actual threats correctly identified"
+        },
+        {
+          "check": "Threat false negative rate",
+          "result": "PASS",
+          "details": "Threat FNR: 0.0817 (missed threats)",
+          "threat_fnr": 0.08166666666666667,
+          "interpretation": "Percentage of actual threats missed (critical for safety)"
+        },
+        {
+          "check": "Threat precision",
+          "result": "PASS",
+          "details": "Threat Precision: 0.9048",
+          "threat_precision": 0.9047619047619048,
+          "interpretation": "Percentage of predicted threats that are actually threats"
+        }
+      ],
+      "overall": "PASS"
+    },
+    "confusion_matrices": {
+      "items": [
+        {
+          "check": "Confusion matrix row sums",
+          "result": "PASS",
+          "details": "Each class should have exactly 2400 test samples",
+          "row_sums": {
+            "SAFE": 2400,
+            "WEATHER": 2400,
+            "ALCOHOL": 2400,
+            "EXPLOSIVE": 2400,
+            "NARCOTIC": 2400
+          },
+          "expected_row_sum": 2400
+        },
+        {
+          "check": "Class ordering in matrices",
+          "result": "PASS",
+          "details": "Order: ['SAFE', 'WEATHER', 'ALCOHOL', 'EXPLOSIVE', 'NARCOTIC']",
+          "class_order": [
+            "SAFE",
+            "WEATHER",
+            "ALCOHOL",
+            "EXPLOSIVE",
+            "NARCOTIC"
+          ]
+        },
+        {
+          "check": "Per-class recall from diagonal",
+          "result": "PASS",
+          "details": "Recall = diagonal / row_sum",
+          "per_class_recall": {
+            "SAFE": 0.88,
+            "WEATHER": 0.9270833333333334,
+            "ALCOHOL": 0.8283333333333334,
+            "EXPLOSIVE": 0.945,
+            "NARCOTIC": 0.8333333333333334
+          }
+        },
+        {
+          "check": "EXPLOSIVE recall (threat detection)",
+          "result": "PASS",
+          "details": "EXPLOSIVE recall: 0.9450",
+          "explosive_recall": 0.945,
+          "safety_critical": true
+        },
+        {
+          "check": "NARCOTIC recall (threat detection)",
+          "result": "PASS",
+          "details": "NARCOTIC recall: 0.8333",
+          "narcotic_recall": 0.8333333333333334,
+          "safety_critical": true
+        }
+      ],
+      "overall": "PASS"
+    },
+    "tinyml_float32": {
+      "items": [
+        {
+          "check": "Model exists and loads",
+          "result": "PASS",
+          "details": "models/tinyml/sentry_tinyml.keras found and valid",
+          "model_path": "models/tinyml/sentry_tinyml.keras"
+        },
+        {
+          "check": "Architecture",
+          "result": "PASS",
+          "details": "Input(7) -> Dense(16, ReLU) -> Dense(8, ReLU) -> Dense(5, softmax)",
+          "layers": 3,
+          "input_shape": 7,
+          "output_shape": 5,
+          "tinyml_compatible": true
+        },
+        {
+          "check": "Scaler compatibility",
+          "result": "PASS",
+          "details": "Model receives 7-feature scaled vector",
+          "scaler_saved": true,
+          "mean_shape": [
+            7
+          ],
+          "scale_shape": [
+            7
+          ]
+        },
+        {
+          "check": "Class ordering",
+          "result": "PASS",
+          "details": "Output ordering: ['SAFE', 'WEATHER', 'ALCOHOL', 'EXPLOSIVE', 'NARCOTIC']",
+          "class_order": [
+            "SAFE",
+            "WEATHER",
+            "ALCOHOL",
+            "EXPLOSIVE",
+            "NARCOTIC"
+          ]
+        },
+        {
+          "check": "Accuracy",
+          "result": "PASS",
+          "details": "Float32 Accuracy: 0.8828 (88.28%)",
+          "accuracy": 0.88275
+        }
+      ],
+      "overall": "PASS"
+    },
+    "int8_quantization": {
+      "items": [
+        {
+          "check": "INT8 model exists",
+          "result": "PASS",
+          "details": "models/tinyml/sentry_tinyml_int8.tflite found",
+          "model_path": "models/tinyml/sentry_tinyml_int8.tflite",
+          "model_size_kb": 3.5234375
+        },
+        {
+          "check": "Input/output datatypes",
+          "result": "PASS",
+          "details": "Input and output are both INT8",
+          "input_dtype": "<class 'numpy.int8'>",
+          "output_dtype": "<class 'numpy.int8'>"
+        },
+        {
+          "check": "Quantization parameters valid",
+          "result": "PASS",
+          "details": "Input and output quantization scales are non-zero",
+          "input_scale": 0.04073100537061691,
+          "input_zero_point": -60,
+          "output_scale": 0.00390625,
+          "output_zero_point": -128
+        },
+        {
+          "check": "Representative dataset source",
+          "result": "PASS",
+          "details": "Representative data from 500 samples of TRAINING set only",
+          "representative_source": "training_data_only",
+          "representative_sample_count": 500,
+          "data_leakage_check": "PASS - test data NOT used"
+        },
+        {
+          "check": "INT8 accuracy",
+          "result": "PASS",
+          "details": "INT8 Accuracy: 0.8801 (88.01%)",
+          "accuracy": 0.8800833333333333,
+          "degradation_from_float32": -0.002666666666666706
+        },
+        {
+          "check": "Model size optimization",
+          "result": "PASS",
+          "details": "INT8 model: 3.52 KB (suitable for ESP32)",
+          "model_size_kb": 3.5234375,
+          "esp32_compatible": true
+        }
+      ],
+      "overall": "PASS"
+    },
+    "training_inference_parity": {
+      "items": [
+        {
+          "check": "Feature sequence consistency",
+          "result": "PASS",
+          "details": "Training and inference use identical 7-feature order",
+          "feature_order": [
+            "VMQ2",
+            "VMQ3",
+            "VMQ135",
+            "VSEN0567",
+            "dVdt_max",
+            "temperature",
+            "humidity"
+          ],
+          "match": true
+        },
+        {
+          "check": "Baseline conversion in both paths",
+          "result": "PASS",
+          "details": "Config.py (training) and ml_server.py (inference) use same baselines",
+          "model_baselines_match": true,
+          "real_baselines_match": true
+        },
+        {
+          "check": "Active baseline definitions",
+          "result": "PASS",
+          "details": "Active model-space baselines are consistent with the requested definitions",
+          "model_baselines": {
+            "MQ2": 0.82,
+            "MQ3": 0.74,
+            "MQ135": 0.91,
+            "SEN0567": 0.34
+          }
+        },
+        {
+          "check": "Environmental compensation coefficients",
+          "result": "PASS",
+          "details": "Training and inference use identical compensation coefficients",
+          "coefficients_match": true,
+          "reference_values_match": true
+        },
+        {
+          "check": "dV/dt calculation",
+          "result": "PASS",
+          "details": "Both use first 4 samples with dt=0.1s, max absolute slope",
+          "window": "first_4_samples",
+          "dt_seconds": 0.1,
+          "parity": true
+        },
+        {
+          "check": "Scaler application",
+          "result": "PASS",
+          "details": "Both use StandardScaler with saved mean and scale",
+          "formula": "(X - mean) / scale",
+          "parity": true
+        },
+        {
+          "check": "Class mapping",
+          "result": "PASS",
+          "details": "Model output (0-4) consistently maps to SAFE, WEATHER, ALCOHOL, EXPLOSIVE, NARCOTIC",
+          "class_order": [
+            "SAFE",
+            "WEATHER",
+            "ALCOHOL",
+            "EXPLOSIVE",
+            "NARCOTIC"
+          ],
+          "parity": true
+        }
+      ],
+      "overall": "PASS"
+    },
+    "numerical_sanity_tests": {
+      "items": [
+        {
+          "check": "Numerical calculations",
+          "result": "PASS",
+          "details": "All test cases compute correctly",
+          "test_count": 4
+        }
+      ],
+      "overall": "PASS",
+      "test_cases": [
+        {
+          "name": "Environmental compensation (MQ135)",
+          "inputs": {
+            "V_raw": 1.2,
+            "H": 80,
+            "T": 30,
+            "sensor": "MQ135"
+          },
+          "calculation": "V_comp = 1.20 - 0.0022*(80-50) - 0.0009*(30-25)",
+          "intermediate_steps": {
+            "H_component": 0.066,
+            "T_component": 0.0045,
+            "total_subtraction": 0.07050000000000001
+          },
+          "expected_result": 1.1295,
+          "expected_result_value": 1.1295
+        },
+        {
+          "name": "dV/dt slope calculation",
+          "inputs": {
+            "V0": 0.8,
+            "V1": 0.87,
+            "dt": 0.1
+          },
+          "calculation": "dV/dt = (V1 - V0) / dt = (0.87 - 0.80) / 0.1",
+          "expected_result": 0.6999999999999995,
+          "expected_result_value": 0.7
+        },
+        {
+          "name": "Sensor baseline conversion (MQ2)",
+          "inputs": {
+            "raw_adc": 2000,
+            "real_baseline": 3069.0,
+            "model_baseline": 0.82,
+            "sensor": "MQ2"
+          },
+          "calculation": "V_model = (2000 / 3069.0) * 0.82",
+          "expected_result": 0.534376018246986,
+          "expected_result_approx": 0.534376018246986
+        },
+        {
+          "name": "StandardScaler transformation",
+          "inputs": {
+            "X": 50.0,
+            "mean": 53.5,
+            "scale": 14.3
+          },
+          "calculation": "X_scaled = (50.0 - 53.5) / 14.3",
+          "expected_result": -0.24475524475524474,
+          "expected_result_approx": -0.2448
+        }
+      ]
+    }
+  }
+}
