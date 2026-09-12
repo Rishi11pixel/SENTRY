@@ -1,0 +1,1362 @@
+{
+  "dataset": {
+    "training_path": "data\\raw\\sentry_synthetic_dataset.csv",
+    "final_test_path": "data\\raw\\sentry_synthetic_test.csv",
+    "training_rows": 60000,
+    "final_test_rows": 12000,
+    "features": [
+      "VMQ2",
+      "VMQ3",
+      "VMQ135",
+      "VSEN0567",
+      "dVdt_max",
+      "temperature",
+      "humidity"
+    ],
+    "classes": [
+      "SAFE",
+      "WEATHER",
+      "ALCOHOL",
+      "EXPLOSIVE",
+      "NARCOTIC"
+    ],
+    "split": "80/20 stratified train/validation, random_state=42",
+    "final_test_used_only_for_evaluation": true
+  },
+  "validation": {
+    "Random Forest": {
+      "accuracy": 0.8956666666666667,
+      "macro_f1": 0.8961984213959939,
+      "per_class": {
+        "SAFE": {
+          "precision": 0.8681017612524462,
+          "recall": 0.9241666666666667,
+          "f1": 0.8952573158425833,
+          "support": 2400
+        },
+        "WEATHER": {
+          "precision": 0.9864213753832677,
+          "recall": 0.9383333333333334,
+          "f1": 0.9617766389066837,
+          "support": 2400
+        },
+        "ALCOHOL": {
+          "precision": 0.8194335169158143,
+          "recall": 0.8679166666666667,
+          "f1": 0.8429785511938487,
+          "support": 2400
+        },
+        "EXPLOSIVE": {
+          "precision": 0.92,
+          "recall": 0.9008333333333334,
+          "f1": 0.9103157894736842,
+          "support": 2400
+        },
+        "NARCOTIC": {
+          "precision": 0.8955947136563877,
+          "recall": 0.8470833333333333,
+          "f1": 0.8706638115631692,
+          "support": 2400
+        }
+      },
+      "confusion_matrix": [
+        [
+          2218,
+          23,
+          91,
+          46,
+          22
+        ],
+        [
+          82,
+          2252,
+          16,
+          27,
+          23
+        ],
+        [
+          151,
+          3,
+          2083,
+          52,
+          111
+        ],
+        [
+          88,
+          4,
+          65,
+          2162,
+          81
+        ],
+        [
+          16,
+          1,
+          287,
+          63,
+          2033
+        ]
+      ],
+      "threat_safety": {
+        "threat_definition": "EXPLOSIVE + NARCOTIC",
+        "non_threat_definition": "SAFE + WEATHER + ALCOHOL",
+        "TP": 4339,
+        "TN": 6919,
+        "FP": 281,
+        "FN": 461,
+        "threat_recall": 0.9039583333333333,
+        "threat_false_negative_rate": 0.09604166666666666,
+        "threat_precision": 0.9391774891774892,
+        "threat_f1": 0.9212314225053079,
+        "explosive_recall": 0.9008333333333334,
+        "narcotic_recall": 0.8470833333333333
+      }
+    },
+    "XGBoost": {
+      "accuracy": 0.9061666666666667,
+      "macro_f1": 0.906467295163307,
+      "per_class": {
+        "SAFE": {
+          "precision": 0.9201373980249034,
+          "recall": 0.8929166666666667,
+          "f1": 0.9063226897864242,
+          "support": 2400
+        },
+        "WEATHER": {
+          "precision": 0.9776824034334763,
+          "recall": 0.9491666666666667,
+          "f1": 0.9632135306553912,
+          "support": 2400
+        },
+        "ALCOHOL": {
+          "precision": 0.84221065278334,
+          "recall": 0.87625,
+          "f1": 0.8588931999183174,
+          "support": 2400
+        },
+        "EXPLOSIVE": {
+          "precision": 0.9018974566007267,
+          "recall": 0.9308333333333333,
+          "f1": 0.9161369694484314,
+          "support": 2400
+        },
+        "NARCOTIC": {
+          "precision": 0.8939585973806506,
+          "recall": 0.8816666666666667,
+          "f1": 0.8877700860079715,
+          "support": 2400
+        }
+      },
+      "confusion_matrix": [
+        [
+          2143,
+          41,
+          125,
+          74,
+          17
+        ],
+        [
+          71,
+          2278,
+          7,
+          21,
+          23
+        ],
+        [
+          74,
+          2,
+          2103,
+          75,
+          146
+        ],
+        [
+          37,
+          6,
+          58,
+          2234,
+          65
+        ],
+        [
+          4,
+          3,
+          204,
+          73,
+          2116
+        ]
+      ],
+      "threat_safety": {
+        "threat_definition": "EXPLOSIVE + NARCOTIC",
+        "non_threat_definition": "SAFE + WEATHER + ALCOHOL",
+        "TP": 4488,
+        "TN": 6844,
+        "FP": 356,
+        "FN": 312,
+        "threat_recall": 0.935,
+        "threat_false_negative_rate": 0.065,
+        "threat_precision": 0.9265070189925682,
+        "threat_f1": 0.9307341352136044,
+        "explosive_recall": 0.9308333333333333,
+        "narcotic_recall": 0.8816666666666667
+      }
+    },
+    "HistGradientBoosting": {
+      "accuracy": 0.9041666666666667,
+      "macro_f1": 0.9045507860632716,
+      "per_class": {
+        "SAFE": {
+          "precision": 0.9241767764298093,
+          "recall": 0.88875,
+          "f1": 0.9061172472387425,
+          "support": 2400
+        },
+        "WEATHER": {
+          "precision": 0.9763745704467354,
+          "recall": 0.9470833333333334,
+          "f1": 0.9615059221658206,
+          "support": 2400
+        },
+        "ALCOHOL": {
+          "precision": 0.8351169242964724,
+          "recall": 0.8779166666666667,
+          "f1": 0.8559821247206988,
+          "support": 2400
+        },
+        "EXPLOSIVE": {
+          "precision": 0.9036585365853659,
+          "recall": 0.92625,
+          "f1": 0.9148148148148149,
+          "support": 2400
+        },
+        "NARCOTIC": {
+          "precision": 0.8878622427551449,
+          "recall": 0.8808333333333334,
+          "f1": 0.8843338213762811,
+          "support": 2400
+        }
+      },
+      "confusion_matrix": [
+        [
+          2133,
+          43,
+          139,
+          71,
+          14
+        ],
+        [
+          70,
+          2273,
+          7,
+          21,
+          29
+        ],
+        [
+          61,
+          3,
+          2107,
+          74,
+          155
+        ],
+        [
+          37,
+          6,
+          65,
+          2223,
+          69
+        ],
+        [
+          7,
+          3,
+          205,
+          71,
+          2114
+        ]
+      ],
+      "threat_safety": {
+        "threat_definition": "EXPLOSIVE + NARCOTIC",
+        "non_threat_definition": "SAFE + WEATHER + ALCOHOL",
+        "TP": 4477,
+        "TN": 6836,
+        "FP": 364,
+        "FN": 323,
+        "threat_recall": 0.9327083333333334,
+        "threat_false_negative_rate": 0.06729166666666667,
+        "threat_precision": 0.9248089237760794,
+        "threat_f1": 0.9287418317601909,
+        "explosive_recall": 0.92625,
+        "narcotic_recall": 0.8808333333333334
+      }
+    },
+    "SVM RBF": {
+      "accuracy": 0.8975,
+      "macro_f1": 0.8980012389747071,
+      "per_class": {
+        "SAFE": {
+          "precision": 0.9033347403967918,
+          "recall": 0.8916666666666667,
+          "f1": 0.8974627804571189,
+          "support": 2400
+        },
+        "WEATHER": {
+          "precision": 0.9807608220376038,
+          "recall": 0.9345833333333333,
+          "f1": 0.9571154256454022,
+          "support": 2400
+        },
+        "ALCOHOL": {
+          "precision": 0.8241758241758241,
+          "recall": 0.875,
+          "f1": 0.8488278092158448,
+          "support": 2400
+        },
+        "EXPLOSIVE": {
+          "precision": 0.9016727866177071,
+          "recall": 0.9208333333333333,
+          "f1": 0.9111523397237683,
+          "support": 2400
+        },
+        "NARCOTIC": {
+          "precision": 0.8857142857142857,
+          "recall": 0.8654166666666666,
+          "f1": 0.8754478398314015,
+          "support": 2400
+        }
+      },
+      "confusion_matrix": [
+        [
+          2140,
+          27,
+          143,
+          70,
+          20
+        ],
+        [
+          77,
+          2243,
+          15,
+          36,
+          29
+        ],
+        [
+          87,
+          1,
+          2100,
+          64,
+          148
+        ],
+        [
+          54,
+          10,
+          55,
+          2210,
+          71
+        ],
+        [
+          11,
+          6,
+          235,
+          71,
+          2077
+        ]
+      ],
+      "threat_safety": {
+        "threat_definition": "EXPLOSIVE + NARCOTIC",
+        "non_threat_definition": "SAFE + WEATHER + ALCOHOL",
+        "TP": 4429,
+        "TN": 6833,
+        "FP": 367,
+        "FN": 371,
+        "threat_recall": 0.9227083333333334,
+        "threat_false_negative_rate": 0.07729166666666666,
+        "threat_precision": 0.9234778982485404,
+        "threat_f1": 0.9230929553980826,
+        "explosive_recall": 0.9208333333333333,
+        "narcotic_recall": 0.8654166666666666
+      }
+    },
+    "Logistic Regression": {
+      "accuracy": 0.8461666666666666,
+      "macro_f1": 0.8469124234199542,
+      "per_class": {
+        "SAFE": {
+          "precision": 0.7589996210685865,
+          "recall": 0.8345833333333333,
+          "f1": 0.7949990077396308,
+          "support": 2400
+        },
+        "WEATHER": {
+          "precision": 0.9359861591695502,
+          "recall": 0.9016666666666666,
+          "f1": 0.9185059422750425,
+          "support": 2400
+        },
+        "ALCOHOL": {
+          "precision": 0.8051673019906819,
+          "recall": 0.7920833333333334,
+          "f1": 0.7985717286284394,
+          "support": 2400
+        },
+        "EXPLOSIVE": {
+          "precision": 0.8726355611601513,
+          "recall": 0.865,
+          "f1": 0.8688010043942247,
+          "support": 2400
+        },
+        "NARCOTIC": {
+          "precision": 0.8705067128627111,
+          "recall": 0.8375,
+          "f1": 0.8536844340624337,
+          "support": 2400
+        }
+      },
+      "confusion_matrix": [
+        [
+          2003,
+          39,
+          175,
+          121,
+          62
+        ],
+        [
+          45,
+          2164,
+          34,
+          102,
+          55
+        ],
+        [
+          325,
+          23,
+          1901,
+          29,
+          122
+        ],
+        [
+          184,
+          56,
+          24,
+          2076,
+          60
+        ],
+        [
+          82,
+          30,
+          227,
+          51,
+          2010
+        ]
+      ],
+      "threat_safety": {
+        "threat_definition": "EXPLOSIVE + NARCOTIC",
+        "non_threat_definition": "SAFE + WEATHER + ALCOHOL",
+        "TP": 4197,
+        "TN": 6709,
+        "FP": 491,
+        "FN": 603,
+        "threat_recall": 0.874375,
+        "threat_false_negative_rate": 0.125625,
+        "threat_precision": 0.8952645051194539,
+        "threat_f1": 0.8846964586846543,
+        "explosive_recall": 0.865,
+        "narcotic_recall": 0.8375
+      }
+    },
+    "KNN": {
+      "accuracy": 0.8825833333333334,
+      "macro_f1": 0.8834627772027657,
+      "per_class": {
+        "SAFE": {
+          "precision": 0.9100829332169358,
+          "recall": 0.86875,
+          "f1": 0.8889362609251759,
+          "support": 2400
+        },
+        "WEATHER": {
+          "precision": 0.985663082437276,
+          "recall": 0.9166666666666666,
+          "f1": 0.9499136442141624,
+          "support": 2400
+        },
+        "ALCOHOL": {
+          "precision": 0.799843321582452,
+          "recall": 0.8508333333333333,
+          "f1": 0.8245507773066828,
+          "support": 2400
+        },
+        "EXPLOSIVE": {
+          "precision": 0.8875404530744336,
+          "recall": 0.9141666666666667,
+          "f1": 0.9006568144499179,
+          "support": 2400
+        },
+        "NARCOTIC": {
+          "precision": 0.8442088091353996,
+          "recall": 0.8625,
+          "f1": 0.8532563891178895,
+          "support": 2400
+        }
+      },
+      "confusion_matrix": [
+        [
+          2085,
+          25,
+          182,
+          80,
+          28
+        ],
+        [
+          114,
+          2200,
+          10,
+          44,
+          32
+        ],
+        [
+          60,
+          0,
+          2042,
+          72,
+          226
+        ],
+        [
+          25,
+          4,
+          81,
+          2194,
+          96
+        ],
+        [
+          7,
+          3,
+          238,
+          82,
+          2070
+        ]
+      ],
+      "threat_safety": {
+        "threat_definition": "EXPLOSIVE + NARCOTIC",
+        "non_threat_definition": "SAFE + WEATHER + ALCOHOL",
+        "TP": 4442,
+        "TN": 6718,
+        "FP": 482,
+        "FN": 358,
+        "threat_recall": 0.9254166666666667,
+        "threat_false_negative_rate": 0.07458333333333333,
+        "threat_precision": 0.9021121039805037,
+        "threat_f1": 0.9136157959687371,
+        "explosive_recall": 0.9141666666666667,
+        "narcotic_recall": 0.8625
+      }
+    },
+    "Extra Trees": {
+      "accuracy": 0.8398333333333333,
+      "macro_f1": 0.8418665359613939,
+      "per_class": {
+        "SAFE": {
+          "precision": 0.8197080291970803,
+          "recall": 0.9358333333333333,
+          "f1": 0.8739299610894942,
+          "support": 2400
+        },
+        "WEATHER": {
+          "precision": 0.9986123959296948,
+          "recall": 0.8995833333333333,
+          "f1": 0.9465146865409908,
+          "support": 2400
+        },
+        "ALCOHOL": {
+          "precision": 0.6313232352100601,
+          "recall": 0.9204166666666667,
+          "f1": 0.7489404983895576,
+          "support": 2400
+        },
+        "EXPLOSIVE": {
+          "precision": 0.9460227272727273,
+          "recall": 0.8325,
+          "f1": 0.8856382978723404,
+          "support": 2400
+        },
+        "NARCOTIC": {
+          "precision": 0.9858776059179556,
+          "recall": 0.6108333333333333,
+          "f1": 0.7543092359145871,
+          "support": 2400
+        }
+      },
+      "confusion_matrix": [
+        [
+          2246,
+          3,
+          140,
+          11,
+          0
+        ],
+        [
+          134,
+          2159,
+          41,
+          57,
+          9
+        ],
+        [
+          177,
+          0,
+          2209,
+          12,
+          2
+        ],
+        [
+          160,
+          0,
+          232,
+          1998,
+          10
+        ],
+        [
+          23,
+          0,
+          877,
+          34,
+          1466
+        ]
+      ],
+      "threat_safety": {
+        "threat_definition": "EXPLOSIVE + NARCOTIC",
+        "non_threat_definition": "SAFE + WEATHER + ALCOHOL",
+        "TP": 3508,
+        "TN": 7109,
+        "FP": 91,
+        "FN": 1292,
+        "threat_recall": 0.7308333333333333,
+        "threat_false_negative_rate": 0.26916666666666667,
+        "threat_precision": 0.9747151986662962,
+        "threat_f1": 0.8353375401833552,
+        "explosive_recall": 0.8325,
+        "narcotic_recall": 0.6108333333333333
+      }
+    }
+  },
+  "final_test": {
+    "Random Forest": {
+      "accuracy": 0.8945833333333333,
+      "macro_f1": 0.8950687019197716,
+      "per_class": {
+        "SAFE": {
+          "precision": 0.8582918422060514,
+          "recall": 0.93375,
+          "f1": 0.8944322490520854,
+          "support": 2400
+        },
+        "WEATHER": {
+          "precision": 0.9802284710017575,
+          "recall": 0.9295833333333333,
+          "f1": 0.9542343883661248,
+          "support": 2400
+        },
+        "ALCOHOL": {
+          "precision": 0.8202692003167062,
+          "recall": 0.8633333333333333,
+          "f1": 0.8412505075111653,
+          "support": 2400
+        },
+        "EXPLOSIVE": {
+          "precision": 0.9277469003847798,
+          "recall": 0.9041666666666667,
+          "f1": 0.9158050221565731,
+          "support": 2400
+        },
+        "NARCOTIC": {
+          "precision": 0.8990213523131673,
+          "recall": 0.8420833333333333,
+          "f1": 0.8696213425129088,
+          "support": 2400
+        }
+      },
+      "confusion_matrix": [
+        [
+          2241,
+          32,
+          78,
+          35,
+          14
+        ],
+        [
+          93,
+          2231,
+          12,
+          36,
+          28
+        ],
+        [
+          168,
+          0,
+          2072,
+          53,
+          107
+        ],
+        [
+          86,
+          5,
+          61,
+          2170,
+          78
+        ],
+        [
+          23,
+          8,
+          303,
+          45,
+          2021
+        ]
+      ],
+      "threat_safety": {
+        "threat_definition": "EXPLOSIVE + NARCOTIC",
+        "non_threat_definition": "SAFE + WEATHER + ALCOHOL",
+        "TP": 4314,
+        "TN": 6927,
+        "FP": 273,
+        "FN": 486,
+        "threat_recall": 0.89875,
+        "threat_false_negative_rate": 0.10125,
+        "threat_precision": 0.9404839764551994,
+        "threat_f1": 0.9191434963247044,
+        "explosive_recall": 0.9041666666666667,
+        "narcotic_recall": 0.8420833333333333
+      }
+    },
+    "XGBoost": {
+      "accuracy": 0.9045,
+      "macro_f1": 0.9048077524410927,
+      "per_class": {
+        "SAFE": {
+          "precision": 0.9093959731543624,
+          "recall": 0.9033333333333333,
+          "f1": 0.9063545150501672,
+          "support": 2400
+        },
+        "WEATHER": {
+          "precision": 0.9752925877763329,
+          "recall": 0.9375,
+          "f1": 0.9560229445506692,
+          "support": 2400
+        },
+        "ALCOHOL": {
+          "precision": 0.8426334805299077,
+          "recall": 0.8745833333333334,
+          "f1": 0.8583111838069925,
+          "support": 2400
+        },
+        "EXPLOSIVE": {
+          "precision": 0.9065420560747663,
+          "recall": 0.9295833333333333,
+          "f1": 0.9179181238428307,
+          "support": 2400
+        },
+        "NARCOTIC": {
+          "precision": 0.8935086974968179,
+          "recall": 0.8775,
+          "f1": 0.8854319949548034,
+          "support": 2400
+        }
+      },
+      "confusion_matrix": [
+        [
+          2168,
+          47,
+          117,
+          55,
+          13
+        ],
+        [
+          85,
+          2250,
+          7,
+          38,
+          20
+        ],
+        [
+          83,
+          0,
+          2099,
+          70,
+          148
+        ],
+        [
+          39,
+          6,
+          54,
+          2231,
+          70
+        ],
+        [
+          9,
+          4,
+          214,
+          67,
+          2106
+        ]
+      ],
+      "threat_safety": {
+        "threat_definition": "EXPLOSIVE + NARCOTIC",
+        "non_threat_definition": "SAFE + WEATHER + ALCOHOL",
+        "TP": 4474,
+        "TN": 6856,
+        "FP": 344,
+        "FN": 326,
+        "threat_recall": 0.9320833333333334,
+        "threat_false_negative_rate": 0.06791666666666667,
+        "threat_precision": 0.9286010792860108,
+        "threat_f1": 0.9303389478061967,
+        "explosive_recall": 0.9295833333333333,
+        "narcotic_recall": 0.8775
+      }
+    },
+    "HistGradientBoosting": {
+      "accuracy": 0.9036666666666666,
+      "macro_f1": 0.9040292082701663,
+      "per_class": {
+        "SAFE": {
+          "precision": 0.914468085106383,
+          "recall": 0.8954166666666666,
+          "f1": 0.9048421052631579,
+          "support": 2400
+        },
+        "WEATHER": {
+          "precision": 0.9731833910034602,
+          "recall": 0.9375,
+          "f1": 0.9550084889643463,
+          "support": 2400
+        },
+        "ALCOHOL": {
+          "precision": 0.8334655035685964,
+          "recall": 0.8758333333333334,
+          "f1": 0.8541243396993092,
+          "support": 2400
+        },
+        "EXPLOSIVE": {
+          "precision": 0.9109394062627084,
+          "recall": 0.9333333333333333,
+          "f1": 0.9220004116073266,
+          "support": 2400
+        },
+        "NARCOTIC": {
+          "precision": 0.8922358930844294,
+          "recall": 0.87625,
+          "f1": 0.8841706958166912,
+          "support": 2400
+        }
+      },
+      "confusion_matrix": [
+        [
+          2149,
+          52,
+          130,
+          55,
+          14
+        ],
+        [
+          85,
+          2250,
+          9,
+          37,
+          19
+        ],
+        [
+          76,
+          0,
+          2102,
+          68,
+          154
+        ],
+        [
+          30,
+          5,
+          58,
+          2240,
+          67
+        ],
+        [
+          10,
+          5,
+          223,
+          59,
+          2103
+        ]
+      ],
+      "threat_safety": {
+        "threat_definition": "EXPLOSIVE + NARCOTIC",
+        "non_threat_definition": "SAFE + WEATHER + ALCOHOL",
+        "TP": 4469,
+        "TN": 6853,
+        "FP": 347,
+        "FN": 331,
+        "threat_recall": 0.9310416666666667,
+        "threat_false_negative_rate": 0.06895833333333333,
+        "threat_precision": 0.9279485049833887,
+        "threat_f1": 0.9294925124792013,
+        "explosive_recall": 0.9333333333333333,
+        "narcotic_recall": 0.87625
+      }
+    },
+    "SVM RBF": {
+      "accuracy": 0.8959166666666667,
+      "macro_f1": 0.8963716571426245,
+      "per_class": {
+        "SAFE": {
+          "precision": 0.8865043334709038,
+          "recall": 0.895,
+          "f1": 0.8907319095998342,
+          "support": 2400
+        },
+        "WEATHER": {
+          "precision": 0.9775922671353251,
+          "recall": 0.9270833333333334,
+          "f1": 0.9516680923866553,
+          "support": 2400
+        },
+        "ALCOHOL": {
+          "precision": 0.8248319493871096,
+          "recall": 0.8691666666666666,
+          "f1": 0.8464191519578008,
+          "support": 2400
+        },
+        "EXPLOSIVE": {
+          "precision": 0.907309105757452,
+          "recall": 0.9258333333333333,
+          "f1": 0.9164776242524232,
+          "support": 2400
+        },
+        "NARCOTIC": {
+          "precision": 0.8910891089108911,
+          "recall": 0.8625,
+          "f1": 0.876561507516409,
+          "support": 2400
+        }
+      },
+      "confusion_matrix": [
+        [
+          2148,
+          36,
+          130,
+          61,
+          25
+        ],
+        [
+          84,
+          2225,
+          11,
+          49,
+          31
+        ],
+        [
+          119,
+          0,
+          2086,
+          63,
+          132
+        ],
+        [
+          49,
+          8,
+          56,
+          2222,
+          65
+        ],
+        [
+          23,
+          7,
+          246,
+          54,
+          2070
+        ]
+      ],
+      "threat_safety": {
+        "threat_definition": "EXPLOSIVE + NARCOTIC",
+        "non_threat_definition": "SAFE + WEATHER + ALCOHOL",
+        "TP": 4411,
+        "TN": 6839,
+        "FP": 361,
+        "FN": 389,
+        "threat_recall": 0.9189583333333333,
+        "threat_false_negative_rate": 0.08104166666666666,
+        "threat_precision": 0.9243503772003353,
+        "threat_f1": 0.9216464688675302,
+        "explosive_recall": 0.9258333333333333,
+        "narcotic_recall": 0.8625
+      }
+    },
+    "Logistic Regression": {
+      "accuracy": 0.8429166666666666,
+      "macro_f1": 0.8436645159375551,
+      "per_class": {
+        "SAFE": {
+          "precision": 0.7483345669874167,
+          "recall": 0.8425,
+          "f1": 0.7926303410427283,
+          "support": 2400
+        },
+        "WEATHER": {
+          "precision": 0.9263937282229965,
+          "recall": 0.88625,
+          "f1": 0.90587734241908,
+          "support": 2400
+        },
+        "ALCOHOL": {
+          "precision": 0.8103298611111112,
+          "recall": 0.7779166666666667,
+          "f1": 0.7937925170068028,
+          "support": 2400
+        },
+        "EXPLOSIVE": {
+          "precision": 0.8690969345484673,
+          "recall": 0.8741666666666666,
+          "f1": 0.8716244287494807,
+          "support": 2400
+        },
+        "NARCOTIC": {
+          "precision": 0.8760945709281961,
+          "recall": 0.83375,
+          "f1": 0.854397950469684,
+          "support": 2400
+        }
+      },
+      "confusion_matrix": [
+        [
+          2022,
+          34,
+          162,
+          125,
+          57
+        ],
+        [
+          53,
+          2127,
+          30,
+          125,
+          65
+        ],
+        [
+          369,
+          34,
+          1867,
+          26,
+          104
+        ],
+        [
+          173,
+          56,
+          16,
+          2098,
+          57
+        ],
+        [
+          85,
+          45,
+          229,
+          40,
+          2001
+        ]
+      ],
+      "threat_safety": {
+        "threat_definition": "EXPLOSIVE + NARCOTIC",
+        "non_threat_definition": "SAFE + WEATHER + ALCOHOL",
+        "TP": 4196,
+        "TN": 6698,
+        "FP": 502,
+        "FN": 604,
+        "threat_recall": 0.8741666666666666,
+        "threat_false_negative_rate": 0.12583333333333332,
+        "threat_precision": 0.8931460195828012,
+        "threat_f1": 0.8835544325121077,
+        "explosive_recall": 0.8741666666666666,
+        "narcotic_recall": 0.83375
+      }
+    },
+    "KNN": {
+      "accuracy": 0.8795,
+      "macro_f1": 0.8802875697614232,
+      "per_class": {
+        "SAFE": {
+          "precision": 0.8905787917194762,
+          "recall": 0.8783333333333333,
+          "f1": 0.8844136773652193,
+          "support": 2400
+        },
+        "WEATHER": {
+          "precision": 0.98816029143898,
+          "recall": 0.9041666666666667,
+          "f1": 0.9442993907745866,
+          "support": 2400
+        },
+        "ALCOHOL": {
+          "precision": 0.7940711462450593,
+          "recall": 0.8370833333333333,
+          "f1": 0.8150101419878296,
+          "support": 2400
+        },
+        "EXPLOSIVE": {
+          "precision": 0.8804606830818109,
+          "recall": 0.92375,
+          "f1": 0.9015860105734038,
+          "support": 2400
+        },
+        "NARCOTIC": {
+          "precision": 0.8580996232733361,
+          "recall": 0.8541666666666666,
+          "f1": 0.8561286281060764,
+          "support": 2400
+        }
+      },
+      "confusion_matrix": [
+        [
+          2108,
+          21,
+          172,
+          72,
+          27
+        ],
+        [
+          131,
+          2170,
+          10,
+          57,
+          32
+        ],
+        [
+          95,
+          1,
+          2009,
+          92,
+          203
+        ],
+        [
+          27,
+          2,
+          77,
+          2217,
+          77
+        ],
+        [
+          6,
+          2,
+          262,
+          80,
+          2050
+        ]
+      ],
+      "threat_safety": {
+        "threat_definition": "EXPLOSIVE + NARCOTIC",
+        "non_threat_definition": "SAFE + WEATHER + ALCOHOL",
+        "TP": 4424,
+        "TN": 6717,
+        "FP": 483,
+        "FN": 376,
+        "threat_recall": 0.9216666666666666,
+        "threat_false_negative_rate": 0.07833333333333334,
+        "threat_precision": 0.9015691868758916,
+        "threat_f1": 0.9115071597816008,
+        "explosive_recall": 0.92375,
+        "narcotic_recall": 0.8541666666666666
+      }
+    },
+    "Extra Trees": {
+      "accuracy": 0.8390833333333333,
+      "macro_f1": 0.8409865496522126,
+      "per_class": {
+        "SAFE": {
+          "precision": 0.8060971286777738,
+          "recall": 0.9475,
+          "f1": 0.8710974909021261,
+          "support": 2400
+        },
+        "WEATHER": {
+          "precision": 0.9958081043316255,
+          "recall": 0.8908333333333334,
+          "f1": 0.9404002639102705,
+          "support": 2400
+        },
+        "ALCOHOL": {
+          "precision": 0.6358113971651721,
+          "recall": 0.9158333333333334,
+          "f1": 0.7505548915827215,
+          "support": 2400
+        },
+        "EXPLOSIVE": {
+          "precision": 0.9534548944337812,
+          "recall": 0.8279166666666666,
+          "f1": 0.8862622658340767,
+          "support": 2400
+        },
+        "NARCOTIC": {
+          "precision": 0.9872568745808182,
+          "recall": 0.6133333333333333,
+          "f1": 0.7566178360318684,
+          "support": 2400
+        }
+      },
+      "confusion_matrix": [
+        [
+          2274,
+          8,
+          109,
+          9,
+          0
+        ],
+        [
+          156,
+          2138,
+          46,
+          53,
+          7
+        ],
+        [
+          189,
+          0,
+          2198,
+          9,
+          4
+        ],
+        [
+          168,
+          1,
+          236,
+          1987,
+          8
+        ],
+        [
+          34,
+          0,
+          868,
+          26,
+          1472
+        ]
+      ],
+      "threat_safety": {
+        "threat_definition": "EXPLOSIVE + NARCOTIC",
+        "non_threat_definition": "SAFE + WEATHER + ALCOHOL",
+        "TP": 3493,
+        "TN": 7118,
+        "FP": 82,
+        "FN": 1307,
+        "threat_recall": 0.7277083333333333,
+        "threat_false_negative_rate": 0.27229166666666665,
+        "threat_precision": 0.977062937062937,
+        "threat_f1": 0.8341492537313432,
+        "explosive_recall": 0.8279166666666666,
+        "narcotic_recall": 0.6133333333333333
+      }
+    }
+  },
+  "comparison_sorted_by_threat_fnr": [
+    {
+      "rank_by_threat_fnr": 1,
+      "model": "XGBoost",
+      "accuracy": 0.9045,
+      "macro_f1": 0.9048077524410927,
+      "threat_fnr": 0.06791666666666667,
+      "threat_recall": 0.9320833333333334,
+      "threat_precision": 0.9286010792860108,
+      "threat_f1": 0.9303389478061967,
+      "explosive_recall": 0.9295833333333333,
+      "narcotic_recall": 0.8775,
+      "TP": 4474,
+      "TN": 6856,
+      "FP": 344,
+      "FN": 326
+    },
+    {
+      "rank_by_threat_fnr": 2,
+      "model": "HistGradientBoosting",
+      "accuracy": 0.9036666666666666,
+      "macro_f1": 0.9040292082701663,
+      "threat_fnr": 0.06895833333333333,
+      "threat_recall": 0.9310416666666667,
+      "threat_precision": 0.9279485049833887,
+      "threat_f1": 0.9294925124792013,
+      "explosive_recall": 0.9333333333333333,
+      "narcotic_recall": 0.87625,
+      "TP": 4469,
+      "TN": 6853,
+      "FP": 347,
+      "FN": 331
+    },
+    {
+      "rank_by_threat_fnr": 3,
+      "model": "KNN",
+      "accuracy": 0.8795,
+      "macro_f1": 0.8802875697614232,
+      "threat_fnr": 0.07833333333333334,
+      "threat_recall": 0.9216666666666666,
+      "threat_precision": 0.9015691868758916,
+      "threat_f1": 0.9115071597816008,
+      "explosive_recall": 0.92375,
+      "narcotic_recall": 0.8541666666666666,
+      "TP": 4424,
+      "TN": 6717,
+      "FP": 483,
+      "FN": 376
+    },
+    {
+      "rank_by_threat_fnr": 4,
+      "model": "SVM RBF",
+      "accuracy": 0.8959166666666667,
+      "macro_f1": 0.8963716571426245,
+      "threat_fnr": 0.08104166666666666,
+      "threat_recall": 0.9189583333333333,
+      "threat_precision": 0.9243503772003353,
+      "threat_f1": 0.9216464688675302,
+      "explosive_recall": 0.9258333333333333,
+      "narcotic_recall": 0.8625,
+      "TP": 4411,
+      "TN": 6839,
+      "FP": 361,
+      "FN": 389
+    },
+    {
+      "rank_by_threat_fnr": 5,
+      "model": "Random Forest",
+      "accuracy": 0.8945833333333333,
+      "macro_f1": 0.8950687019197716,
+      "threat_fnr": 0.10125,
+      "threat_recall": 0.89875,
+      "threat_precision": 0.9404839764551994,
+      "threat_f1": 0.9191434963247044,
+      "explosive_recall": 0.9041666666666667,
+      "narcotic_recall": 0.8420833333333333,
+      "TP": 4314,
+      "TN": 6927,
+      "FP": 273,
+      "FN": 486
+    },
+    {
+      "rank_by_threat_fnr": 6,
+      "model": "Logistic Regression",
+      "accuracy": 0.8429166666666666,
+      "macro_f1": 0.8436645159375551,
+      "threat_fnr": 0.12583333333333332,
+      "threat_recall": 0.8741666666666666,
+      "threat_precision": 0.8931460195828012,
+      "threat_f1": 0.8835544325121077,
+      "explosive_recall": 0.8741666666666666,
+      "narcotic_recall": 0.83375,
+      "TP": 4196,
+      "TN": 6698,
+      "FP": 502,
+      "FN": 604
+    },
+    {
+      "rank_by_threat_fnr": 7,
+      "model": "Extra Trees",
+      "accuracy": 0.8390833333333333,
+      "macro_f1": 0.8409865496522126,
+      "threat_fnr": 0.27229166666666665,
+      "threat_recall": 0.7277083333333333,
+      "threat_precision": 0.977062937062937,
+      "threat_f1": 0.8341492537313432,
+      "explosive_recall": 0.8279166666666666,
+      "narcotic_recall": 0.6133333333333333,
+      "TP": 3493,
+      "TN": 7118,
+      "FP": 82,
+      "FN": 1307
+    }
+  ]
+}

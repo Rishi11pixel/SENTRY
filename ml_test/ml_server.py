@@ -16,19 +16,19 @@ app = Flask(__name__)
 # ============================================================
 
 MODEL_PATH = Path(
-    r"C:\SENTRY\models\tinyml\sentry_tinyml.keras"
+    r"D:\SENTRY\models\tinyml\sentry_tinyml.keras"
 )
 
 SCALER_MEAN_PATH = Path(
-    r"C:\SENTRY\models\tinyml\scaler_mean.npy"
+    r"D:\SENTRY\models\tinyml\scaler_mean.npy"
 )
 
 SCALER_SCALE_PATH = Path(
-    r"C:\SENTRY\models\tinyml\scaler_scale.npy"
+    r"D:\SENTRY\models\tinyml\scaler_scale.npy"
 )
 
 LABELS_PATH = Path(
-    r"C:\SENTRY\models\tinyml\label_classes.npy"
+    r"D:\SENTRY\models\tinyml\label_classes.npy"
 )
 
 
