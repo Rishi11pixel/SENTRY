@@ -69,6 +69,19 @@ export interface Incident {
   latestReading?: SensorReading | null;
 }
 
+export interface AlertEvent {
+  id: string;
+  device_id: string;
+  prediction: string;
+  display_result: string;
+  confidence: number;
+  location: string | null;
+  platform: string | null;
+  status: string;
+  created_at: string;
+  resolved_at: string | null;
+}
+
 export function truncateConfidencePercent(value: number): string {
   return (Math.trunc(value * 100) / 100).toFixed(2);
 }

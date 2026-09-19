@@ -1,4 +1,4 @@
-import type { Device, Incident, LogEntry, PredictionResult } from "./data";
+import type { AlertEvent, Device, Incident, LogEntry, PredictionResult } from "./data";
 
 const API_BASE = (import.meta.env.VITE_API_URL || "http://127.0.0.1:8000").replace(/\/$/, "");
 
@@ -25,7 +25,11 @@ export async function getDashboardSummary() {
 }
 
 export async function getIncidents() {
-  return (await get<{ incidents: Incident[] }>("/api/v1/incidents")).incidents;
+  return (await get<{ incidents: Incident[] }> ("/api/v1/incidents")).incidents;
+}
+
+export async function getAlertEvents() {
+  return (await get<{ alert_events: AlertEvent[] }> ("/api/v1/alert-events")).alert_events;
 }
 
 export async function getLogs() {

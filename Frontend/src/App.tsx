@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { X } from "lucide-react";
-import { acknowledgeIncident, getDashboardSummary, getDevices, getIncidents, getLogs, resolveIncident } from "./api";
+import { acknowledgeIncident, getAlertEvents, getDashboardSummary, getDevices, getIncidents, getLogs, resolveIncident } from "./api";
 import ThreatIcon from "./components/ThreatIcon";
 import Login from "./components/Login";
 import Sidebar from "./components/Sidebar";
@@ -12,7 +12,7 @@ import AnomalyAlert from "./screens/AnomalyAlert";
 import ThreatHistory from "./screens/ResponseCenter";
 import Devices from "./screens/Devices";
 import SystemLogs from "./screens/SystemLogs";
-import { truncateConfidencePercent, type Device, type Incident, type LogEntry } from "./data";
+import { truncateConfidencePercent, type AlertEvent, type Device, type Incident, type LogEntry } from "./data";
 
 /* ── Toast ── */
 interface Toast { id:number; msg:string; type:"alert"|"warning"|"info"|"success"; state:string; }
@@ -46,6 +46,7 @@ export default function App() {
   const [toastId, setToastId]     = useState(0);
   const [devices, setDevices]     = useState<Device[]>([]);
   const [incidents, setIncidents] = useState<Incident[]>([]);
+  const [alertEvents, setAlertEvents] = useState<AlertEvent[]>([]);
   const [logs, setLogs]           = useState<LogEntry[]>([]);
   const [summary, setSummary]     = useState({ connectedDevices: 0, online: 0, offline: 0, activeAlerts: 0 });
   const seenIncidentIds = useRef<Set<string> | null>(null);
@@ -61,13 +62,14 @@ export default function App() {
     let active = true;
     const refresh = async () => {
       try {
-        const [nextDevices, nextSummary, nextIncidents, nextLogs] = await Promise.all([
-          getDevices(), getDashboardSummary(), getIncidents(), getLogs(),
+        const [nextDevices, nextSummary, nextIncidents, nextLogs, nextAlertEvents] = await Promise.all([
+          getDevices(), getDashboardSummary(), getIncidents(), getLogs(), getAlertEvents(),
         ]);
         if (!active) return;
         setDevices(nextDevices);
         setSummary(nextSummary);
         setIncidents(nextIncidents);
+        setAlertEvents(nextAlertEvents);
         setLogs(nextLogs);
 
         const currentIds = new Set(nextIncidents.map(incident => incident.id));
@@ -162,7 +164,7 @@ export default function App() {
               onAcknowledge={async id=>{ await handleAcknowledge(id); addToast("Issue recognised — RAIL_ADM_001","success","SAFE"); }}
               onResolved={async id=>{ await handleResolve(id); addToast("Incident resolved — moved to Threat History","success","SAFE"); setScreen("threat-history"); }}/>
           )}
-          {screen==="threat-history"&&<ThreatHistory theme="dark" incidents={incidents}/>} 
+          {screen==="threat-history"&&<ThreatHistory theme="dark" incidents={incidents} alertEvents={alertEvents}/>} 
           {screen==="logs"&&<SystemLogs theme="dark" logs={logs}/>} 
         </div>
       </div>

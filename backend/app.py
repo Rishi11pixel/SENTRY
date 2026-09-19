@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import os
+import sqlite3
 import threading
 from collections import deque
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from math import isfinite
+from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
@@ -15,7 +17,8 @@ from flask import Flask, jsonify, request
 WINDOW_SIZE = 30
 READING_FIELDS = ("temperature", "humidity", "mq2", "mq3", "mq135", "sen0567")
 MODEL_LABELS = ("SAFE", "WEATHER", "ALCOHOL", "EXPLOSIVE", "NARCOTIC")
-SAFE_LABELS = {"SAFE", "WEATHER"}
+NON_THREAT_LABELS = {"SAFE", "WEATHER", "ALCOHOL"}
+THREAT_LABELS = {"EXPLOSIVE", "NARCOTIC"}
 OPTIONAL_METADATA_FIELDS = ("source_status", "test_object")
 
 BACKEND_HOST = os.getenv("SENTRY_BACKEND_HOST", "127.0.0.1")
@@ -28,8 +31,142 @@ FRONTEND_ORIGINS = os.getenv(
 ).split(",")
 
 
+DB_PATH = Path(__file__).resolve().parent / "alert_history.sqlite3"
+ALERT_HISTORY_DAYS = 7
+
+
 def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _connect_db() -> sqlite3.Connection:
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def init_alert_history_db() -> None:
+    with _connect_db() as conn:
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS alert_events (
+                id TEXT PRIMARY KEY,
+                device_id TEXT NOT NULL,
+                prediction TEXT NOT NULL,
+                display_result TEXT NOT NULL,
+                confidence REAL NOT NULL,
+                location TEXT,
+                platform TEXT,
+                status TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                resolved_at TEXT
+            )
+            """
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_alert_events_device_active ON alert_events(device_id, status, created_at)"
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_alert_events_created_at ON alert_events(created_at)"
+        )
+        prune_old_alert_events()
+
+
+def prune_old_alert_events() -> int:
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=ALERT_HISTORY_DAYS)).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+    with _connect_db() as conn:
+        cursor = conn.execute(
+            "DELETE FROM alert_events WHERE created_at < ?",
+            (cutoff,),
+        )
+        return cursor.rowcount
+
+
+def get_active_alert_event(device_id: str) -> dict[str, Any] | None:
+    with _connect_db() as conn:
+        row = conn.execute(
+            """
+            SELECT * FROM alert_events
+            WHERE device_id = ? AND status = 'THREAT' AND resolved_at IS NULL
+            ORDER BY created_at DESC
+            LIMIT 1
+            """,
+            (device_id,),
+        ).fetchone()
+    return dict(row) if row is not None else None
+
+
+def resolve_alert_event(device_id: str, resolved_at: str | None = None) -> None:
+    with _connect_db() as conn:
+        conn.execute(
+            """
+            UPDATE alert_events
+            SET resolved_at = ?
+            WHERE id = (
+                SELECT id
+                FROM alert_events
+                WHERE device_id = ? AND status = 'THREAT' AND resolved_at IS NULL
+                ORDER BY created_at DESC
+                LIMIT 1
+            )
+            """,
+            (resolved_at or utc_now(), device_id),
+        )
+
+
+def record_alert_event(
+    *,
+    device_id: str,
+    prediction: str,
+    display_result: str,
+    confidence: float,
+    location: str | None,
+    platform: str | None,
+    status: str,
+    created_at: str | None = None,
+) -> dict[str, Any] | None:
+    if status != "THREAT":
+        return None
+
+    active_event = get_active_alert_event(device_id)
+    if active_event is not None:
+        return None
+
+    event_id = str(uuid4())
+    ts = created_at or utc_now()
+    event = {
+        "id": event_id,
+        "device_id": device_id,
+        "prediction": prediction,
+        "display_result": display_result,
+        "confidence": float(confidence),
+        "location": location,
+        "platform": platform,
+        "status": status,
+        "created_at": ts,
+        "resolved_at": None,
+    }
+    with _connect_db() as conn:
+        conn.execute(
+            """
+            INSERT INTO alert_events (id, device_id, prediction, display_result, confidence, location, platform, status, created_at, resolved_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                event["id"],
+                event["device_id"],
+                event["prediction"],
+                event["display_result"],
+                event["confidence"],
+                event["location"],
+                event["platform"],
+                event["status"],
+                event["created_at"],
+                event["resolved_at"],
+            ),
+        )
+    prune_old_alert_events()
+    return event
 
 
 def display_result(prediction: str) -> str:
@@ -38,6 +175,10 @@ def display_result(prediction: str) -> str:
         "EXPLOSIVE": "EXPLOSIVE PROXY",
         "NARCOTIC": "NARCOTIC PROXY",
     }.get(prediction, prediction)
+
+
+def map_prediction_to_status(prediction: str) -> str:
+    return "THREAT" if prediction in THREAT_LABELS else "NON-THREAT"
 
 
 def default_device(device_id: str) -> dict[str, Any]:
@@ -74,6 +215,8 @@ def default_device(device_id: str) -> dict[str, Any]:
 
 
 app = Flask(__name__)
+
+init_alert_history_db()
 
 
 @app.after_request
@@ -240,6 +383,30 @@ def call_ml_server(device_id: str, window: list[dict[str, Any]]) -> dict[str, An
     return response.json()
 
 
+def create_alert_history_event(device_id: str, prediction_record: dict[str, Any]) -> None:
+    if prediction_record["status"] != "THREAT":
+        return
+
+    device = get_device(device_id)
+    saved_event = record_alert_event(
+        device_id=device_id,
+        prediction=prediction_record["prediction"],
+        display_result=prediction_record["displayResult"],
+        confidence=prediction_record["confidence"],
+        location=device["location"],
+        platform=device["platform"],
+        status=prediction_record["status"],
+        created_at=prediction_record["timestamp"],
+    )
+    if saved_event is not None:
+        add_log(
+            device_id,
+            f"Threat alert logged: {saved_event['prediction']} ({saved_event['display_result']})",
+            "ALERT",
+            device["location"],
+        )
+
+
 def create_prediction(device_id: str, window: list[dict[str, Any]]) -> dict[str, Any] | None:
     device = get_device(device_id)
     try:
@@ -250,12 +417,13 @@ def create_prediction(device_id: str, window: list[dict[str, Any]]) -> dict[str,
 
     prediction = str(model_result["prediction"])
     confidence = float(model_result.get("confidence", 0))
+    system_status = map_prediction_to_status(prediction)
     prediction_record = {
         "id": str(uuid4()),
         "window_id": f"{device_id}-{uuid4().hex[:12]}",
         "timestamp": utc_now(),
         "device_id": device_id,
-        "status": model_result.get("status", "ALERT"),
+        "status": system_status,
         "prediction": prediction,
         "displayResult": display_result(prediction),
         "confidence": confidence,
@@ -269,21 +437,22 @@ def create_prediction(device_id: str, window: list[dict[str, Any]]) -> dict[str,
 
     device.update(
         {
-            "status": "ONLINE" if prediction in SAFE_LABELS else "ALERT",
+            "status": "ONLINE",
             "lastResult": display_result(prediction),
             "confidence": round(confidence * 100, 2),
             "latestPrediction": prediction_record,
             "lastSync": prediction_record["timestamp"],
         }
     )
+    create_alert_history_event(device_id, prediction_record)
     add_log(
         device_id,
-        f"{display_result(prediction)} detected - Confidence {confidence * 100:.1f}%",
-        "SUCCESS" if prediction in SAFE_LABELS else "ALERT",
+        f"Model result: {prediction} ({system_status}) - Confidence {confidence * 100:.1f}%",
+        "SUCCESS" if system_status == "NON-THREAT" else "ALERT",
         device["location"],
     )
 
-    if prediction not in SAFE_LABELS:
+    if system_status == "THREAT":
         incident_id = f"{device_id}-{prediction_record['timestamp'].replace(':', '').replace('-', '')[:15]}"
         incidents[incident_id] = {
             "id": incident_id,
@@ -347,13 +516,25 @@ def ingest_reading(device_id: str):
                 if key in reading
             }
         )
-        add_log(device_id, "Sensor reading received", "INFO", device["location"])
+        reading_count = len(windows[device_id])
+        add_log(
+            device_id,
+            f"Reading accepted: device={device_id} count={reading_count}/{WINDOW_SIZE}",
+            "INFO",
+            device["location"],
+        )
 
         prediction = process_pending_windows(device_id)
         if len(windows[device_id]) == WINDOW_SIZE:
             window = list(windows[device_id])
             windows[device_id].clear()
             pending_windows[device_id].append(window)
+            add_log(
+                device_id,
+                f"Window complete: device={device_id} count={WINDOW_SIZE}/{WINDOW_SIZE}; sending to ML server",
+                "INFO",
+                device["location"],
+            )
             prediction = process_pending_windows(device_id) or prediction
 
         response = {
@@ -426,6 +607,8 @@ def update_incident(incident_id: str, status: str):
         operator_id = (request.get_json(silent=True) or {}).get("operator_id", "UNKNOWN")
         incident["operatorId"] = operator_id
         incident["updatedAt"] = utc_now()
+        if status == "RESOLVED":
+            resolve_alert_event(incident["device"])
         add_log(incident["device"], f"Incident {status.lower()} by {operator_id}", "SUCCESS", incident["location"])
         return jsonify(incident)
 
@@ -445,6 +628,15 @@ def list_logs():
     limit = min(max(request.args.get("limit", default=100, type=int), 1), 500)
     with lock:
         return jsonify({"logs": list(logs)[:limit]})
+
+
+@app.get("/api/v1/alert-events")
+def list_alert_events():
+    with _connect_db() as conn:
+        rows = conn.execute(
+            "SELECT * FROM alert_events ORDER BY created_at DESC"
+        ).fetchall()
+    return jsonify({"alert_events": [dict(row) for row in rows]})
 
 
 if __name__ == "__main__":

@@ -498,12 +498,12 @@ def extract_features(readings):
     # ========================================================
 
     temperature_mean = float(
-        temperature[-1]
+        np.mean(temperature[-5:])
     )
 
 
     humidity_mean = float(
-        humidity[-1]
+        np.mean(humidity[-5:])
     )
 
 
@@ -701,12 +701,13 @@ def predict_endpoint():
         # APPLICATION STATUS
         # ====================================================
         #
-        # SAFE environmental classes:
+        # Specification mapping:
         #
-        #   SAFE
-        #   WEATHER
-        #
-        # Everything else is treated as ALERT.
+        #   SAFE      -> NON-THREAT
+        #   WEATHER   -> NON-THREAT
+        #   ALCOHOL   -> NON-THREAT
+        #   EXPLOSIVE -> THREAT
+        #   NARCOTIC  -> THREAT
         #
         # This does NOT modify ML confidence or probabilities.
         # ====================================================
@@ -714,15 +715,14 @@ def predict_endpoint():
         if prediction in [
             "SAFE",
             "WEATHER",
-            "AMBIENT_CLEAN",
-            "WEATHER_DRIFT"
+            "ALCOHOL"
         ]:
 
-            system_status = "SAFE"
+            system_status = "NON-THREAT"
 
         else:
 
-            system_status = "ALERT"
+            system_status = "THREAT"
 
 
         # ====================================================

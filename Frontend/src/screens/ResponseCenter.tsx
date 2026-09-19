@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { truncateConfidencePercent, type Incident } from "../data";
+import { truncateConfidencePercent, type AlertEvent, type Incident } from "../data";
 import ThreatIcon from "../components/ThreatIcon";
 
 type IncStatus = "LIVE" | "RECOGNISED" | "RESOLVED";
@@ -27,7 +27,7 @@ function displayResult(result: string) {
   return result === "CAUTION" ? "WEATHER DRIFT" : result;
 }
 
-export default function ThreatHistory({ theme, incidents }: { theme: "dark" | "light"; incidents: Incident[] }) {
+export default function ThreatHistory({ theme, incidents, alertEvents }: { theme: "dark" | "light"; incidents: Incident[]; alertEvents: AlertEvent[] }) {
   const dark  = theme === "dark";
   const bg    = dark ? "bg-obsidian"   : "bg-[#F1EDE3]";
   const cBg   = dark ? "bg-gunmetal"   : "bg-white";
@@ -87,6 +87,33 @@ export default function ThreatHistory({ theme, incidents }: { theme: "dark" | "l
             </button>
           ))}
         </div>
+
+        {/* Alert event history */}
+        {alertEvents.length > 0 && (
+          <div className={`panel ${cBg}`}>
+            <div className="p-4">
+              <div className="font-mono text-[9px] tracking-[.2em] uppercase text-brass mb-3">ALERT EVENT HISTORY</div>
+              <div className="space-y-2">
+                {alertEvents.slice(0, 8).map(event => (
+                  <div key={event.id} className={`flex flex-col md:flex-row md:items-center justify-between gap-2 p-3 border ${bdr}`}>
+                    <div>
+                      <div className="font-mono text-[9px] tracking-widest text-brass">{event.created_at}</div>
+                      <div className="font-mono text-[10px] text-ivory">{event.device_id} / {event.location || "Unknown"}</div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-[8.5px] px-2 py-1" style={{ background: `${tc(event.display_result)}20`, color: tc(event.display_result), border: `1px solid ${tc(event.display_result)}40` }}>
+                        {event.display_result}
+                      </span>
+                      <span className="font-mono text-[8px] tracking-widest uppercase" style={{ color: event.resolved_at ? "#20C878" : "#B3262E" }}>
+                        {event.resolved_at ? "RESOLVED" : "ACTIVE"}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Incident cards */}
         <div className="space-y-3">
