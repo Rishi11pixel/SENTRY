@@ -1,10 +1,15 @@
 from flask import Flask, request, jsonify
 import numpy as np
-import joblib
 from pathlib import Path
+import tensorflow as tf
+import sys
+
+
+# ============================================================
+# PROJECT ROOT
+# ============================================================
 
 ROOT = Path(__file__).resolve().parent.parent
-import sys
 
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
@@ -23,34 +28,57 @@ app = Flask(__name__)
 # MODEL PATHS
 # ============================================================
 
-MODEL_DIR = ROOT / "models" / "random_forest"
+MODEL_DIR = ROOT / "models" / "tinyml"
 
-MODEL_PATH = MODEL_DIR / "random_forest.joblib"
-SCALER_PATH = MODEL_DIR / "scaler.joblib"
-LABELS_PATH = MODEL_DIR / "label_encoder.joblib"
+MODEL_PATH = MODEL_DIR / "sentry_tinyml.keras"
+SCALER_MEAN_PATH = MODEL_DIR / "scaler_mean.npy"
+SCALER_SCALE_PATH = MODEL_DIR / "scaler_scale.npy"
+LABELS_PATH = MODEL_DIR / "label_classes.npy"
 
 
 # ============================================================
-# LOAD TRAINED MODEL
+# LOAD MODEL
 # ============================================================
 
 print()
-print("=" * 50)
-print("          SENTRY ML SERVER")
-print("=" * 50)
+print("=" * 60)
+print("              SENTRY TINYML SERVER")
+print("=" * 60)
 
-print("\nLoading Random Forest model...")
+print("\nLoading TinyML model...")
 
-model = joblib.load(MODEL_PATH)
-scaler = joblib.load(SCALER_PATH)
-label_encoder = joblib.load(LABELS_PATH)
+model = tf.keras.models.load_model(
+    MODEL_PATH,
+    compile=False
+)
 
-print("Model loaded successfully.")
+scaler_mean = np.load(
+    SCALER_MEAN_PATH
+)
 
-print("\nML Classes:")
+scaler_scale = np.load(
+    SCALER_SCALE_PATH
+)
 
-for i, label in enumerate(label_encoder):
+label_classes = np.load(
+    LABELS_PATH,
+    allow_pickle=True
+)
+
+label_classes = [
+    str(label)
+    for label in label_classes
+]
+
+print("TinyML model loaded successfully.")
+
+print("\nModel classes:")
+
+for i, label in enumerate(label_classes):
     print(f"  {i} -> {label}")
+
+print("\nModel input shape:")
+print(model.input_shape)
 
 
 # ============================================================
@@ -131,7 +159,7 @@ def compensate_sensor(
 
 def convert_sen0567(value):
 
-    # ESP32 already sends SEN0567 as volts.
+    # ESP32 sends SEN0567 as volts.
     return float(value)
 
 
@@ -142,7 +170,7 @@ def convert_sen0567(value):
 def extract_features(readings):
 
     # --------------------------------------------------------
-    # REQUIRE EXACTLY 30 READINGS
+    # EXACTLY 30 READINGS
     # --------------------------------------------------------
 
     if len(readings) != 30:
@@ -153,7 +181,7 @@ def extract_features(readings):
 
 
     # ========================================================
-    # RAW ARRAYS
+    # RAW SENSOR ARRAYS
     # ========================================================
 
     mq2 = np.array(
@@ -188,7 +216,7 @@ def extract_features(readings):
 
 
     # ========================================================
-    # CONVERT MQ SENSORS TO MODEL SCALE
+    # MQ → MODEL SCALE
     # ========================================================
 
     vmq2_raw = np.array(
@@ -304,13 +332,13 @@ def extract_features(readings):
     # dV/dt
     # ========================================================
     #
-    # ONLY FIRST FOUR READINGS
+    # First 4 readings:
     #
-    # 0.0 -> 0.1
-    # 0.1 -> 0.2
-    # 0.2 -> 0.3
+    # 0.0 → 0.1
+    # 0.1 → 0.2
+    # 0.2 → 0.3
     #
-    # Same feature definition used during training.
+    # Same definition used during training.
     # ========================================================
 
     dt = 0.1
@@ -330,7 +358,7 @@ def extract_features(readings):
 
 
     # ========================================================
-    # FINAL 5-READING AVERAGE
+    # LAST 5 READING AVERAGE
     # ========================================================
 
     VMQ2 = float(
@@ -351,7 +379,7 @@ def extract_features(readings):
 
 
     # ========================================================
-    # FINAL TEMPERATURE / HUMIDITY
+    # TEMPERATURE / HUMIDITY
     # ========================================================
 
     temperature_mean = float(
@@ -385,65 +413,86 @@ def extract_features(readings):
 
 
 # ============================================================
-# RANDOM FOREST PREDICTION
+# STANDARD SCALER
+# ============================================================
+
+def scale_features(features):
+
+    scaled = (
+        features - scaler_mean
+    ) / scaler_scale
+
+    return scaled.astype(
+        np.float32
+    )
+
+
+# ============================================================
+# TINYML PREDICTION
 # ============================================================
 
 def predict(features):
 
-    # ========================================================
-    # SCALE USING TRAINING SCALER
-    # ========================================================
+    # --------------------------------------------------------
+    # STANDARDIZE
+    # --------------------------------------------------------
 
-    scaled_features = scaler.transform(
-        features.reshape(1, -1)
+    scaled_features = scale_features(
+        features
     )
 
 
-    # ========================================================
-    # PREDICTION
-    # ========================================================
+    # --------------------------------------------------------
+    # MODEL PREDICTION
+    # --------------------------------------------------------
 
-    prediction_encoded = model.predict(
-        scaled_features
+    probabilities = model.predict(
+        scaled_features.reshape(1, -1),
+        verbose=0
     )[0]
 
 
-    prediction = str(
-        prediction_encoded
+    probabilities = np.asarray(
+        probabilities,
+        dtype=np.float32
     )
 
 
-    # ========================================================
-    # PROBABILITIES
-    # ========================================================
+    # --------------------------------------------------------
+    # ARGMAX
+    # --------------------------------------------------------
 
-    probabilities_array = model.predict_proba(
-        scaled_features
-    )[0]
+    prediction_index = int(
+        np.argmax(probabilities)
+    )
+
+    prediction = label_classes[
+        prediction_index
+    ]
 
 
-    # ========================================================
-    # MAP PROBABILITIES TO CLASS NAMES
-    # ========================================================
+    # --------------------------------------------------------
+    # CONFIDENCE
+    # --------------------------------------------------------
+
+    confidence = float(
+        probabilities[prediction_index]
+    )
+
+
+    # --------------------------------------------------------
+    # PROBABILITY DICTIONARY
+    # --------------------------------------------------------
 
     probability_dict = {
 
-        str(class_name):
-            float(probabilities_array[i])
+        label_classes[i]:
+            float(probabilities[i])
 
-        for i, class_name in enumerate(
-            model.classes_
+        for i in range(
+            len(label_classes)
         )
     }
-
-
-    # ========================================================
-    # CONFIDENCE
-    # ========================================================
-
-    confidence = float(
-        np.max(probabilities_array)
-    )
 
 
     return (
@@ -481,7 +530,7 @@ def predict_endpoint():
 
 
         # ====================================================
-        # GET READINGS
+        # READINGS
         # ====================================================
 
         readings = data.get(
@@ -498,7 +547,7 @@ def predict_endpoint():
 
 
         # ====================================================
-        # REQUIRE 30 READINGS
+        # REQUIRE 30
         # ====================================================
 
         if len(readings) != 30:
@@ -524,7 +573,7 @@ def predict_endpoint():
 
 
         # ====================================================
-        # ML PREDICTION
+        # PREDICTION
         # ====================================================
 
         (
@@ -624,9 +673,9 @@ def predict_endpoint():
         # ====================================================
 
         print()
-        print("=" * 50)
-        print("             ML PREDICTION")
-        print("=" * 50)
+        print("=" * 60)
+        print("                 ML PREDICTION")
+        print("=" * 60)
 
         print(
             f"System Status : {system_status}"
@@ -681,7 +730,7 @@ def predict_endpoint():
                 f"{probability:.4f}"
             )
 
-        print("=" * 50)
+        print("=" * 60)
 
 
         return jsonify(
@@ -721,7 +770,10 @@ def health():
             "ok",
 
         "model":
-            "random_forest.joblib"
+            "sentry_tinyml.keras",
+
+        "classes":
+            label_classes
 
     })
 
@@ -733,9 +785,9 @@ def health():
 if __name__ == "__main__":
 
     print()
-    print("=" * 50)
-    print("       SENTRY ML SERVER RUNNING")
-    print("=" * 50)
+    print("=" * 60)
+    print("          SENTRY TINYML SERVER RUNNING")
+    print("=" * 60)
 
     print(
         "Server: "
@@ -744,10 +796,10 @@ if __name__ == "__main__":
 
     print(
         "Model: "
-        "random_forest.joblib"
+        "sentry_tinyml.keras"
     )
 
-    print("=" * 50)
+    print("=" * 60)
     print()
 
     app.run(
