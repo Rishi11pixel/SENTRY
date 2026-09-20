@@ -33,7 +33,7 @@ app = Flask(__name__)
 # MODEL PATHS
 # ============================================================
 
-MODEL_DIR = ROOT / "models" / "tinyml"
+MODEL_DIR = ROOT / "ml" / "models" / "tinyml"
 
 MODEL_PATH = MODEL_DIR / "sentry_tinyml.keras"
 SCALER_MEAN_PATH = MODEL_DIR / "scaler_mean.npy"
