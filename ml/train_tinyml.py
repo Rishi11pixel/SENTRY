@@ -1,14 +1,23 @@
-import os
+# ml/train_tinyml.py
+
+import json
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import tensorflow as tf
 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import accuracy_score, f1_score, classification_report
+from sklearn.metrics import (
+    accuracy_score,
+    classification_report,
+    confusion_matrix,
+    f1_score,
+)
 
 # ============================================================
-# CONFIG
+# CONFIGURATION
 # ============================================================
 
 SEED = 42
@@ -16,11 +25,30 @@ SEED = 42
 np.random.seed(SEED)
 tf.random.set_seed(SEED)
 
+BASE_DIR = Path(__file__).resolve().parent
+
+DATASET_PATH = BASE_DIR / "dataset.csv"
+
+MODEL_DIR = BASE_DIR / "models" / "tinyml"
+MODEL_DIR.mkdir(parents=True, exist_ok=True)
+
+KERAS_MODEL_PATH = MODEL_DIR / "sentry_tinyml.keras"
+TFLITE_MODEL_PATH = MODEL_DIR / "sentry_tinyml_int8.tflite"
+
+SCALER_MEAN_PATH = MODEL_DIR / "scaler_mean.npy"
+SCALER_SCALE_PATH = MODEL_DIR / "scaler_scale.npy"
+
+LABELS_PATH = MODEL_DIR / "labels.json"
+
+
+# ============================================================
+# FEATURES
+# ============================================================
+
 FEATURES = [
     "VMQ2",
     "VMQ3",
     "VMQ135",
-    "VSEN0567",
     "dVdt_max",
     "temperature",
     "humidity",
@@ -34,16 +62,32 @@ LABELS = [
     "NARCOTIC",
 ]
 
-TRAIN_PATH = "data/raw/sentry_synthetic_dataset.csv"
-TEST_PATH = "data/raw/sentry_synthetic_test.csv"
+LABEL_TO_ID = {
+    label: i
+    for i, label in enumerate(LABELS)
+}
 
-MODEL_DIR = "models/tinyml"
-
-os.makedirs(MODEL_DIR, exist_ok=True)
+ID_TO_LABEL = {
+    i: label
+    for i, label in enumerate(LABELS)
+}
 
 
 # ============================================================
-# LOAD DATA
+# SETTINGS
+# ============================================================
+
+VALIDATION_SIZE = 0.20
+TEST_SIZE = 0.20
+
+EPOCHS = 60
+BATCH_SIZE = 128
+
+LEARNING_RATE = 0.001
+
+
+# ============================================================
+# LOAD DATASET
 # ============================================================
 
 print()
@@ -51,284 +95,291 @@ print("=" * 60)
 print("             SENTRY TinyML TRAINING")
 print("=" * 60)
 
-print("\nLoading dataset...")
+print()
+print("Loading dataset...")
 
-df = pd.read_csv(TRAIN_PATH)
-blind_test = pd.read_csv(TEST_PATH)
+df = pd.read_csv(DATASET_PATH)
 
-print(f"Training dataset: {df.shape}")
-print(f"Blind test set  : {blind_test.shape}")
+print(f"Dataset shape: {df.shape}")
+
+# ------------------------------------------------------------
+# Validate dataset
+# ------------------------------------------------------------
+
+required_columns = FEATURES + ["label"]
+
+missing_columns = [
+    column
+    for column in required_columns
+    if column not in df.columns
+]
+
+if missing_columns:
+    raise ValueError(
+        f"Missing required columns: {missing_columns}"
+    )
+
+# Make sure SEN0567 is completely gone
+for column in df.columns:
+    if "SEN0567" in column.upper():
+        raise ValueError(
+            f"SEN0567 still exists in dataset: {column}"
+        )
+
+# Make sure labels are valid
+unknown_labels = set(df["label"].unique()) - set(LABELS)
+
+if unknown_labels:
+    raise ValueError(
+        f"Unknown labels found: {unknown_labels}"
+    )
 
 
 # ============================================================
-# FEATURES / LABELS
+# PREPARE X / Y
 # ============================================================
 
-X = df[FEATURES].astype(np.float32)
+X = df[FEATURES].astype(np.float32).values
 
-y_text = df["label"].astype(str)
-
-X_test = blind_test[FEATURES].astype(np.float32)
-y_test_text = blind_test["label"].astype(str)
-
-
-# ============================================================
-# LABEL ENCODING
-# ============================================================
-
-label_to_index = {
-    label: i
-    for i, label in enumerate(LABELS)
-}
-
-index_to_label = {
-    i: label
-    for label, i in label_to_index.items()
-}
-
-y = np.array(
-    [
-        label_to_index[label]
-        for label in y_text
-    ],
-    dtype=np.int32
-)
-
-y_test = np.array(
-    [
-        label_to_index[label]
-        for label in y_test_text
-    ],
-    dtype=np.int32
-)
+y = np.array([
+    LABEL_TO_ID[label]
+    for label in df["label"]
+], dtype=np.int32)
 
 
-print("\nClasses:")
+print()
+print("Features:")
+for i, feature in enumerate(FEATURES):
+    print(f"  {i} -> {feature}")
 
+print()
+print("Classes:")
 for i, label in enumerate(LABELS):
     print(f"  {i} -> {label}")
 
+print()
+print(f"Input feature count: {X.shape[1]}")
+
 
 # ============================================================
-# TRAIN / VALIDATION SPLIT
+# TRAIN / TEST SPLIT
 # ============================================================
 
-X_train, X_val, y_train, y_val = train_test_split(
+X_train_full, X_test, y_train_full, y_test = train_test_split(
     X,
     y,
-    test_size=0.20,
+    test_size=TEST_SIZE,
+    random_state=SEED,
     stratify=y,
-    random_state=SEED
 )
+
+X_train, X_val, y_train, y_val = train_test_split(
+    X_train_full,
+    y_train_full,
+    test_size=VALIDATION_SIZE,
+    random_state=SEED,
+    stratify=y_train_full,
+)
+
+print()
+print("Dataset split:")
+print(f"  Training   : {X_train.shape}")
+print(f"  Validation : {X_val.shape}")
+print(f"  Test       : {X_test.shape}")
 
 
 # ============================================================
 # STANDARD SCALER
 # ============================================================
-#
-# IMPORTANT:
-# Fit ONLY on training data.
-# ============================================================
+
+print()
+print("Fitting StandardScaler...")
 
 scaler = StandardScaler()
 
-X_train_scaled = scaler.fit_transform(
-    X_train
-).astype(np.float32)
+X_train_scaled = scaler.fit_transform(X_train).astype(np.float32)
+X_val_scaled = scaler.transform(X_val).astype(np.float32)
+X_test_scaled = scaler.transform(X_test).astype(np.float32)
 
-X_val_scaled = scaler.transform(
-    X_val
-).astype(np.float32)
-
-X_test_scaled = scaler.transform(
-    X_test
-).astype(np.float32)
-
-
-# ============================================================
-# SAVE SCALER
-# ============================================================
-
+# Save scaler parameters
 np.save(
-    os.path.join(
-        MODEL_DIR,
-        "scaler_mean.npy"
-    ),
-    scaler.mean_.astype(np.float32)
+    SCALER_MEAN_PATH,
+    scaler.mean_.astype(np.float32),
 )
 
 np.save(
-    os.path.join(
-        MODEL_DIR,
-        "scaler_scale.npy"
-    ),
-    scaler.scale_.astype(np.float32)
+    SCALER_SCALE_PATH,
+    scaler.scale_.astype(np.float32),
 )
+
+print("Scaler saved.")
 
 
 # ============================================================
 # SAVE LABELS
 # ============================================================
 
-np.save(
-    os.path.join(
-        MODEL_DIR,
-        "label_classes.npy"
-    ),
-    np.array(
-        LABELS,
-        dtype=object
-    )
-)
+with open(LABELS_PATH, "w") as f:
+    json.dump(LABELS, f, indent=2)
+
+print("Labels saved.")
 
 
 # ============================================================
 # BUILD TINYML MODEL
 # ============================================================
 
-print("\nBuilding TinyML neural network...")
+print()
+print("Building TinyML neural network...")
 
 model = tf.keras.Sequential([
-
     tf.keras.layers.Input(
-        shape=(7,),
-        name="sensor_features"
+        shape=(len(FEATURES),),
+        name="input",
     ),
 
     tf.keras.layers.Dense(
         16,
         activation="relu",
-        name="dense_16"
+        name="dense_16",
     ),
 
     tf.keras.layers.Dense(
         8,
         activation="relu",
-        name="dense_8"
+        name="dense_8",
     ),
 
     tf.keras.layers.Dense(
-        5,
+        len(LABELS),
         activation="softmax",
-        name="classification"
-    )
+        name="classification",
+    ),
 ])
 
-
 model.compile(
-
     optimizer=tf.keras.optimizers.Adam(
-        learning_rate=0.001
+        learning_rate=LEARNING_RATE
     ),
-
     loss="sparse_categorical_crossentropy",
-
-    metrics=["accuracy"]
+    metrics=["accuracy"],
 )
-
 
 model.summary()
 
 
 # ============================================================
-# TRAIN
+# TRAINING
 # ============================================================
 
-print("\nTraining...")
+print()
+print("Training...")
+
+early_stopping = tf.keras.callbacks.EarlyStopping(
+    monitor="val_loss",
+    patience=10,
+    restore_best_weights=True,
+)
 
 history = model.fit(
-
     X_train_scaled,
     y_train,
-
     validation_data=(
         X_val_scaled,
-        y_val
+        y_val,
     ),
-
-    epochs=60,
-
-    batch_size=128,
-
+    epochs=EPOCHS,
+    batch_size=BATCH_SIZE,
+    callbacks=[early_stopping],
     verbose=1,
-
-    callbacks=[
-        tf.keras.callbacks.EarlyStopping(
-            monitor="val_loss",
-            patience=8,
-            restore_best_weights=True
-        )
-    ]
 )
 
 
 # ============================================================
-# FLOAT32 TEST
+# SAVE KERAS MODEL
+# ============================================================
+
+model.save(KERAS_MODEL_PATH)
+
+print()
+print(f"Keras model saved:")
+print(KERAS_MODEL_PATH)
+
+
+# ============================================================
+# FLOAT MODEL EVALUATION
 # ============================================================
 
 print()
 print("=" * 60)
-print("             FLOAT32 TEST")
+print("FLOAT MODEL EVALUATION")
 print("=" * 60)
 
 test_probabilities = model.predict(
     X_test_scaled,
-    verbose=0
+    verbose=0,
 )
 
-test_predictions = np.argmax(
+y_pred = np.argmax(
     test_probabilities,
-    axis=1
+    axis=1,
 )
 
 accuracy = accuracy_score(
     y_test,
-    test_predictions
+    y_pred,
 )
 
 macro_f1 = f1_score(
     y_test,
-    test_predictions,
-    average="macro"
+    y_pred,
+    average="macro",
 )
 
-print(
-    f"\nAccuracy : {accuracy * 100:.2f}%"
-)
+print()
+print(f"Accuracy : {accuracy:.4f}")
+print(f"Macro F1 : {macro_f1:.4f}")
 
-print(
-    f"Macro F1 : {macro_f1:.4f}"
-)
-
-print("\nClassification report:")
+print()
+print("Classification report:")
 
 print(
     classification_report(
         y_test,
-        test_predictions,
+        y_pred,
+        labels=list(range(len(LABELS))),
         target_names=LABELS,
-        digits=4
+        digits=4,
+        zero_division=0,
     )
 )
 
+print("Confusion matrix:")
 
-# ============================================================
-# SAVE FLOAT32 MODEL
-# ============================================================
-
-keras_path = os.path.join(
-    MODEL_DIR,
-    "sentry_tinyml.keras"
+cm = confusion_matrix(
+    y_test,
+    y_pred,
+    labels=list(range(len(LABELS))),
 )
 
-model.save(
-    keras_path
+print()
+
+header = "             " + " ".join(
+    f"{label:>10}"
+    for label in LABELS
 )
 
-print(
-    f"\nSaved Float32 model:"
-    f"\n  {keras_path}"
-)
+print(header)
+
+for i, label in enumerate(LABELS):
+    row = " ".join(
+        f"{value:10d}"
+        for value in cm[i]
+    )
+
+    print(
+        f"{label:>10} {row}"
+    )
 
 
 # ============================================================
@@ -337,52 +388,33 @@ print(
 
 print()
 print("=" * 60)
-print("             INT8 QUANTIZATION")
+print("INT8 QUANTIZATION")
 print("=" * 60)
 
+print()
+print("Converting to INT8 TFLite...")
 
-# Representative dataset
-#
-# IMPORTANT:
-# Use training data only.
-# ============================================================
-
-representative_data = X_train_scaled
-
-
-def representative_dataset():
-
-    # Limit representative samples to keep
-    # conversion reasonably fast.
-
-    count = min(
-        500,
-        len(representative_data)
-    )
-
-    for i in range(count):
-
-        sample = representative_data[i]
-
-        sample = sample.reshape(
-            1,
-            7
-        ).astype(np.float32)
-
-        yield [sample]
-
-
-converter = tf.lite.TFLiteConverter.from_keras_model(
-    model
-)
+converter = tf.lite.TFLiteConverter.from_keras_model(model)
 
 converter.optimizations = [
     tf.lite.Optimize.DEFAULT
 ]
 
-converter.representative_dataset = (
-    representative_dataset
-)
+
+# Representative dataset
+def representative_dataset():
+    # Use a subset to keep conversion fast
+    count = min(1000, len(X_train_scaled))
+
+    for i in range(count):
+        sample = X_train_scaled[i:i + 1].astype(
+            np.float32
+        )
+
+        yield [sample]
+
+
+converter.representative_dataset = representative_dataset
 
 converter.target_spec.supported_ops = [
     tf.lite.OpsSet.TFLITE_BUILTINS_INT8
@@ -393,48 +425,31 @@ converter.inference_output_type = tf.int8
 
 tflite_model = converter.convert()
 
+with open(TFLITE_MODEL_PATH, "wb") as f:
+    f.write(tflite_model)
 
-# ============================================================
-# SAVE INT8 MODEL
-# ============================================================
+print()
+print("INT8 model saved:")
+print(TFLITE_MODEL_PATH)
 
-tflite_path = os.path.join(
-    MODEL_DIR,
-    "sentry_tinyml_int8.tflite"
-)
-
-with open(
-    tflite_path,
-    "wb"
-) as f:
-
-    f.write(
-        tflite_model
-    )
-
-
+print()
 print(
-    f"\nSaved INT8 model:"
-    f"\n  {tflite_path}"
-)
-
-print(
-    f"\nINT8 model size:"
-    f" {len(tflite_model)} bytes"
+    f"INT8 model size: "
+    f"{len(tflite_model)} bytes"
 )
 
 
 # ============================================================
-# VERIFY TFLITE MODEL
+# INT8 MODEL VERIFICATION
 # ============================================================
 
 print()
 print("=" * 60)
-print("             INT8 MODEL CHECK")
+print("INT8 MODEL VERIFICATION")
 print("=" * 60)
 
 interpreter = tf.lite.Interpreter(
-    model_path=tflite_path
+    model_path=str(TFLITE_MODEL_PATH)
 )
 
 interpreter.allocate_tensors()
@@ -442,46 +457,8 @@ interpreter.allocate_tensors()
 input_details = interpreter.get_input_details()
 output_details = interpreter.get_output_details()
 
-print("\nInput:")
-print(
-    "  shape :",
-    input_details[0]["shape"]
-)
-print(
-    "  dtype :",
-    input_details[0]["dtype"]
-)
-print(
-    "  scale :",
-    input_details[0]["quantization"][0]
-)
-print(
-    "  zero  :",
-    input_details[0]["quantization"][1]
-)
-
-print("\nOutput:")
-print(
-    "  shape :",
-    output_details[0]["shape"]
-)
-print(
-    "  dtype :",
-    output_details[0]["dtype"]
-)
-print(
-    "  scale :",
-    output_details[0]["quantization"][0]
-)
-print(
-    "  zero  :",
-    output_details[0]["quantization"][1]
-)
-
-
-# ============================================================
-# INT8 BLIND TEST
-# ============================================================
+input_index = input_details[0]["index"]
+output_index = output_details[0]["index"]
 
 input_scale, input_zero_point = (
     input_details[0]["quantization"]
@@ -491,181 +468,206 @@ output_scale, output_zero_point = (
     output_details[0]["quantization"]
 )
 
+print()
+print("Input:")
+print(
+    f"  shape      : "
+    f"{input_details[0]['shape']}"
+)
 
-correct = 0
+print(
+    f"  dtype      : "
+    f"{input_details[0]['dtype']}"
+)
+
+print(
+    f"  scale      : "
+    f"{input_scale}"
+)
+
+print(
+    f"  zero point : "
+    f"{input_zero_point}"
+)
+
+print()
+print("Output:")
+print(
+    f"  shape      : "
+    f"{output_details[0]['shape']}"
+)
+
+print(
+    f"  dtype      : "
+    f"{output_details[0]['dtype']}"
+)
+
+print(
+    f"  scale      : "
+    f"{output_scale}"
+)
+
+print(
+    f"  zero point : "
+    f"{output_zero_point}"
+)
+
+
+# ============================================================
+# INT8 TEST SET EVALUATION
+# ============================================================
+
+print()
+print("Evaluating INT8 model...")
 
 int8_predictions = []
 
+for sample in X_test_scaled:
 
-print("\nRunning INT8 blind test...")
+    sample = sample.astype(np.float32)
 
+    # Quantize input
+    if input_scale == 0:
+        raise ValueError(
+            "Invalid INT8 input scale."
+        )
 
-for i in range(
-    len(X_test_scaled)
-):
-
-    sample = X_test_scaled[i]
-
-    # Float32 -> INT8
-    quantized_input = np.round(
+    quantized = np.round(
         sample / input_scale
         + input_zero_point
-    )
-
-    quantized_input = np.clip(
-        quantized_input,
-        -128,
-        127
     ).astype(np.int8)
 
-    quantized_input = (
-        quantized_input.reshape(
-            1,
-            7
-        )
+    quantized = quantized.reshape(
+        1,
+        len(FEATURES),
     )
 
     interpreter.set_tensor(
-        input_details[0]["index"],
-        quantized_input
+        input_index,
+        quantized,
     )
 
     interpreter.invoke()
 
-    quantized_output = (
-        interpreter.get_tensor(
-            output_details[0]["index"]
-        )
-    )
+    output = interpreter.get_tensor(
+        output_index
+    )[0]
 
-    output_float = (
-        quantized_output.astype(
-            np.float32
-        )
-        - output_zero_point
-    ) * output_scale
+    # Dequantize output
+    if output_scale != 0:
+        output = (
+            output.astype(np.float32)
+            - output_zero_point
+        ) * output_scale
 
     prediction = int(
-        np.argmax(
-            output_float[0]
-        )
+        np.argmax(output)
     )
 
     int8_predictions.append(
         prediction
     )
 
-    if prediction == y_test[i]:
-        correct += 1
 
-
-int8_accuracy = (
-    correct /
-    len(y_test)
-)
-
-
-print(
-    f"\nINT8 Accuracy : "
-    f"{int8_accuracy * 100:.2f}%"
-)
-
-
-print()
-print("=" * 60)
-print("             TRAINING COMPLETE")
-print("=" * 60)
-
-print("\nGenerated files:")
-
-print(
-    f"  {keras_path}"
-)
-
-print(
-    f"  {tflite_path}"
-)
-
-print(
-    f"  {MODEL_DIR}/scaler_mean.npy"
-)
-
-print(
-    f"  {MODEL_DIR}/scaler_scale.npy"
-)
-
-print(
-    f"  {MODEL_DIR}/label_classes.npy"
-)
-
-print()
-print("Next step:")
-print("Test the INT8 model before ESP32 deployment.")
-print("=" * 60)
-
-
-from sklearn.metrics import confusion_matrix
-
-cm = confusion_matrix(
-    y_test,
+int8_predictions = np.array(
     int8_predictions
 )
 
-print()
-print("=" * 60)
-print("             INT8 CONFUSION MATRIX")
-print("=" * 60)
 
+# ============================================================
+# INT8 METRICS
+# ============================================================
+
+int8_accuracy = accuracy_score(
+    y_test,
+    int8_predictions,
+)
+
+int8_macro_f1 = f1_score(
+    y_test,
+    int8_predictions,
+    average="macro",
+)
+
+print()
 print(
-    "\nRows = TRUE CLASS"
-    "\nColumns = PREDICTED CLASS\n"
+    f"INT8 Accuracy : "
+    f"{int8_accuracy:.4f}"
 )
 
 print(
-    "             "
-    + " ".join(
-        f"{label:>10}"
-        for label in LABELS
+    f"INT8 Macro F1 : "
+    f"{int8_macro_f1:.4f}"
+)
+
+print()
+print("INT8 classification report:")
+
+print(
+    classification_report(
+        y_test,
+        int8_predictions,
+        labels=list(range(len(LABELS))),
+        target_names=LABELS,
+        digits=4,
+        zero_division=0,
     )
 )
+
+print("INT8 confusion matrix:")
+
+int8_cm = confusion_matrix(
+    y_test,
+    int8_predictions,
+    labels=list(range(len(LABELS))),
+)
+
+print()
+
+print(header)
 
 for i, label in enumerate(LABELS):
 
+    row = " ".join(
+        f"{value:10d}"
+        for value in int8_cm[i]
+    )
+
     print(
-        f"{label:>10} "
-        + " ".join(
-            f"{cm[i, j]:10d}"
-            for j in range(len(LABELS))
-        )
+        f"{label:>10} {row}"
     )
 
 
 # ============================================================
-# SAFE MISCLASSIFICATION BREAKDOWN
+# FINAL SUMMARY
 # ============================================================
-
-safe_total = np.sum(
-    y_test == label_to_index["SAFE"]
-)
 
 print()
 print("=" * 60)
-print("          SAFE MISCLASSIFICATION")
+print("TRAINING COMPLETE")
 print("=" * 60)
 
-for j, label in enumerate(LABELS):
+print()
+print(f"Features : {len(FEATURES)}")
+print(f"Classes  : {len(LABELS)}")
 
-    count = cm[
-        label_to_index["SAFE"],
-        j
-    ]
+print()
+print(f"Float accuracy : {accuracy:.4f}")
+print(f"Float Macro F1 : {macro_f1:.4f}")
 
-    percentage = (
-        count / safe_total * 100
-    )
+print()
+print(f"INT8 accuracy  : {int8_accuracy:.4f}")
+print(f"INT8 Macro F1  : {int8_macro_f1:.4f}")
 
-    print(
-        f"SAFE -> {label:10s}: "
-        f"{count:5d} "
-        f"({percentage:6.2f}%)"
-    )
+print()
+print("Artifacts:")
+
+print(f"  Keras : {KERAS_MODEL_PATH}")
+print(f"  TFLite: {TFLITE_MODEL_PATH}")
+print(f"  Mean  : {SCALER_MEAN_PATH}")
+print(f"  Scale : {SCALER_SCALE_PATH}")
+print(f"  Labels: {LABELS_PATH}")
+
+print()
+print("SEN0567: REMOVED")
+print()

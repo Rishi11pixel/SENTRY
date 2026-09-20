@@ -14,7 +14,12 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from ml.config import MODEL_BASELINES, REAL_BASELINES
+from ml.config import (
+    MODEL_BASELINES,
+    REAL_BASELINES,
+    COMPENSATION_ALPHA_H,
+    COMPENSATION_ALPHA_T,
+)
 
 
 # ============================================================
@@ -88,23 +93,18 @@ print(model.input_shape)
 COMPENSATION_COEFFICIENTS = {
 
     "MQ2": {
-        "alpha_H": 0.0018,
-        "alpha_T": 0.0008
+        "alpha_H": COMPENSATION_ALPHA_H[0],
+        "alpha_T": COMPENSATION_ALPHA_T[0]
     },
 
     "MQ3": {
-        "alpha_H": 0.0014,
-        "alpha_T": 0.0007
+        "alpha_H": COMPENSATION_ALPHA_H[1],
+        "alpha_T": COMPENSATION_ALPHA_T[1]
     },
 
     "MQ135": {
-        "alpha_H": 0.0022,
-        "alpha_T": 0.0009
-    },
-
-    "SEN0567": {
-        "alpha_H": 0.0016,
-        "alpha_T": 0.0008
+        "alpha_H": COMPENSATION_ALPHA_H[2],
+        "alpha_T": COMPENSATION_ALPHA_T[2]
     }
 }
 
@@ -154,16 +154,6 @@ def compensate_sensor(
 
 
 # ============================================================
-# SEN0567
-# ============================================================
-
-def convert_sen0567(value):
-
-    # ESP32 sends SEN0567 as volts.
-    return float(value)
-
-
-# ============================================================
 # FEATURE EXTRACTION
 # ============================================================
 
@@ -196,11 +186,6 @@ def extract_features(readings):
 
     mq135 = np.array(
         [float(r["mq135"]) for r in readings],
-        dtype=float
-    )
-
-    sen0567 = np.array(
-        [float(r["sen0567"]) for r in readings],
         dtype=float
     )
 
@@ -239,19 +224,6 @@ def extract_features(readings):
         [
             convert_sensor(x, "MQ135")
             for x in mq135
-        ],
-        dtype=float
-    )
-
-
-    # ========================================================
-    # SEN0567
-    # ========================================================
-
-    vsen0567_raw = np.array(
-        [
-            convert_sen0567(x)
-            for x in sen0567
         ],
         dtype=float
     )
@@ -300,30 +272,21 @@ def extract_features(readings):
         dtype=float
     )
 
-    vsen0567 = np.array(
-        [
-            compensate_sensor(
-                vsen0567_raw[i],
-                temperature[i],
-                humidity[i],
-                "SEN0567"
-            )
-            for i in range(30)
-        ],
-        dtype=float
-    )
-
 
     # ========================================================
     # SENSOR MATRIX
+    # ========================================================
+    #
+    # ONLY THE THREE MQ SENSORS ARE USED.
+    #
+    # SEN0567 IS COMPLETELY REMOVED.
     # ========================================================
 
     sensor_matrix = np.column_stack(
         (
             vmq2,
             vmq3,
-            vmq135,
-            vsen0567
+            vmq135
         )
     )
 
@@ -332,13 +295,10 @@ def extract_features(readings):
     # dV/dt
     # ========================================================
     #
-    # First 4 readings:
+    # Calculated from the first 4 readings of the
+    # three MQ sensors, exactly as defined during training.
     #
-    # 0.0 → 0.1
-    # 0.1 → 0.2
-    # 0.2 → 0.3
-    #
-    # Same definition used during training.
+    # Sampling interval = 100 ms = 0.1 s
     # ========================================================
 
     dt = 0.1
@@ -373,10 +333,6 @@ def extract_features(readings):
         np.mean(vmq135[-5:])
     )
 
-    VSEN0567 = float(
-        np.mean(vsen0567[-5:])
-    )
-
 
     # ========================================================
     # TEMPERATURE / HUMIDITY
@@ -392,7 +348,17 @@ def extract_features(readings):
 
 
     # ========================================================
-    # FINAL 7 FEATURES
+    # FINAL 6 FEATURES
+    # ========================================================
+    #
+    # MUST MATCH TRAINING ORDER:
+    #
+    # VMQ2
+    # VMQ3
+    # VMQ135
+    # dVdt_max
+    # temperature
+    # humidity
     # ========================================================
 
     features = np.array(
@@ -400,7 +366,6 @@ def extract_features(readings):
             VMQ2,
             VMQ3,
             VMQ135,
-            VSEN0567,
             dVdt_max,
             temperature_mean,
             humidity_mean
@@ -641,27 +606,21 @@ def predict_endpoint():
                         5
                     ),
 
-                "VSEN0567":
+                "dVdt_max":
                     round(
                         float(features[3]),
                         5
                     ),
 
-                "dVdt_max":
-                    round(
-                        float(features[4]),
-                        5
-                    ),
-
                 "temperature":
                     round(
-                        float(features[5]),
+                        float(features[4]),
                         2
                     ),
 
                 "humidity":
                     round(
-                        float(features[6]),
+                        float(features[5]),
                         2
                     )
             }
@@ -705,19 +664,15 @@ def predict_endpoint():
         )
 
         print(
-            f"  VSEN0567    : {features[3]:.5f}"
+            f"  dVdt_max    : {features[3]:.5f}"
         )
 
         print(
-            f"  dVdt_max    : {features[4]:.5f}"
+            f"  temperature : {features[4]:.2f}"
         )
 
         print(
-            f"  temperature : {features[5]:.2f}"
-        )
-
-        print(
-            f"  humidity    : {features[6]:.2f}"
+            f"  humidity    : {features[5]:.2f}"
         )
 
         print()
