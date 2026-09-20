@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 import numpy as np
-import tensorflow as tf
+import joblib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -23,21 +23,11 @@ app = Flask(__name__)
 # MODEL PATHS
 # ============================================================
 
-MODEL_PATH = Path(
-    r"C:\SENTRY\models\tinyml\sentry_tinyml.keras"
-)
+MODEL_DIR = ROOT / "models" / "random_forest"
 
-SCALER_MEAN_PATH = Path(
-    r"C:\SENTRY\models\tinyml\scaler_mean.npy"
-)
-
-SCALER_SCALE_PATH = Path(
-    r"C:\SENTRY\models\tinyml\scaler_scale.npy"
-)
-
-LABELS_PATH = Path(
-    r"C:\SENTRY\models\tinyml\label_classes.npy"
-)
+MODEL_PATH = MODEL_DIR / "random_forest.joblib"
+SCALER_PATH = MODEL_DIR / "scaler.joblib"
+LABELS_PATH = MODEL_DIR / "label_encoder.joblib"
 
 
 # ============================================================
@@ -45,76 +35,26 @@ LABELS_PATH = Path(
 # ============================================================
 
 print()
-print("=" * 40)
-print("       SENTRY ML SERVER")
-print("=" * 40)
+print("=" * 50)
+print("          SENTRY ML SERVER")
+print("=" * 50)
 
-print("\nLoading trained model...")
+print("\nLoading Random Forest model...")
 
-model = tf.keras.models.load_model(MODEL_PATH)
+model = joblib.load(MODEL_PATH)
+scaler = joblib.load(SCALER_PATH)
+label_encoder = joblib.load(LABELS_PATH)
 
 print("Model loaded successfully.")
 
-
-# ============================================================
-# LOAD SCALER
-# ============================================================
-
-scaler_mean = np.load(
-    SCALER_MEAN_PATH
-)
-
-scaler_scale = np.load(
-    SCALER_SCALE_PATH
-)
-
-
-# ============================================================
-# LOAD LABEL CLASSES
-# ============================================================
-
-label_classes = np.load(
-    LABELS_PATH,
-    allow_pickle=True
-)
-
 print("\nML Classes:")
 
-for i, label in enumerate(label_classes):
+for i, label in enumerate(label_encoder):
     print(f"  {i} -> {label}")
 
 
 # ============================================================
-# MODEL TRAINING BASELINES
-# ============================================================
-#
-# These are the baseline values in the model's sensor scale.
-#
-# IMPORTANT:
-# SEN0567 is assumed to already arrive in the same model-space
-# voltage/unit used during training.
-#
-# If SEN0567 arrives as an ADC count from ESP32 instead,
-# this section MUST be changed after confirming its calibration.
-# ============================================================
-
-# ============================================================
-# REAL ESP32 SENSOR BASELINES
-# ============================================================
-#
-# These are raw ADC baselines from the ESP32.
-# ============================================================
-
-# ============================================================
-# ENVIRONMENTAL COMPENSATION COEFFICIENTS
-# ============================================================
-#
-# V_comp = V_raw
-#          - alpha_H * (Humidity - 50)
-#          - alpha_T * (Temperature - 25)
-#
-# Compensation is performed AFTER conversion to model scale
-# and BEFORE dV/dt calculation.
+# ENVIRONMENTAL COMPENSATION
 # ============================================================
 
 COMPENSATION_COEFFICIENTS = {
@@ -148,7 +88,6 @@ COMPENSATION_COEFFICIENTS = {
 def convert_sensor(raw_value, sensor_name):
 
     real_baseline = REAL_BASELINES[sensor_name]
-
     model_baseline = MODEL_BASELINES[sensor_name]
 
     value = (
@@ -169,17 +108,13 @@ def compensate_sensor(
     sensor_name
 ):
 
-    alpha_H = (
-        COMPENSATION_COEFFICIENTS[
-            sensor_name
-        ]["alpha_H"]
-    )
+    alpha_H = COMPENSATION_COEFFICIENTS[
+        sensor_name
+    ]["alpha_H"]
 
-    alpha_T = (
-        COMPENSATION_COEFFICIENTS[
-            sensor_name
-        ]["alpha_T"]
-    )
+    alpha_T = COMPENSATION_COEFFICIENTS[
+        sensor_name
+    ]["alpha_T"]
 
     compensated_value = (
         raw_model_value
@@ -191,21 +126,12 @@ def compensate_sensor(
 
 
 # ============================================================
-# SEN0567 CONVERSION
-# ============================================================
-#
-# IMPORTANT ASSUMPTION:
-#
-# The ESP32 sends SEN0567 in the same voltage/model-space
-# expected by the trained model.
-#
-# The ESP32 value is forwarded in the model-space units used by
-# the training generator. If a future device sends ADC counts,
-# its calibration must be established before changing this function.
+# SEN0567
 # ============================================================
 
 def convert_sen0567(value):
 
+    # ESP32 already sends SEN0567 as volts.
     return float(value)
 
 
@@ -216,7 +142,7 @@ def convert_sen0567(value):
 def extract_features(readings):
 
     # --------------------------------------------------------
-    # EXACTLY 30 READINGS
+    # REQUIRE EXACTLY 30 READINGS
     # --------------------------------------------------------
 
     if len(readings) != 30:
@@ -227,59 +153,36 @@ def extract_features(readings):
 
 
     # ========================================================
-    # RAW SENSOR ARRAYS
+    # RAW ARRAYS
     # ========================================================
 
     mq2 = np.array(
-        [
-            float(r["mq2"])
-            for r in readings
-        ],
+        [float(r["mq2"]) for r in readings],
         dtype=float
     )
-
 
     mq3 = np.array(
-        [
-            float(r["mq3"])
-            for r in readings
-        ],
+        [float(r["mq3"]) for r in readings],
         dtype=float
     )
-
 
     mq135 = np.array(
-        [
-            float(r["mq135"])
-            for r in readings
-        ],
+        [float(r["mq135"]) for r in readings],
         dtype=float
     )
-
 
     sen0567 = np.array(
-        [
-            float(r["sen0567"])
-            for r in readings
-        ],
+        [float(r["sen0567"]) for r in readings],
         dtype=float
     )
-
 
     temperature = np.array(
-        [
-            float(r["temperature"])
-            for r in readings
-        ],
+        [float(r["temperature"]) for r in readings],
         dtype=float
     )
 
-
     humidity = np.array(
-        [
-            float(r["humidity"])
-            for r in readings
-        ],
+        [float(r["humidity"]) for r in readings],
         dtype=float
     )
 
@@ -296,7 +199,6 @@ def extract_features(readings):
         dtype=float
     )
 
-
     vmq3_raw = np.array(
         [
             convert_sensor(x, "MQ3")
@@ -304,7 +206,6 @@ def extract_features(readings):
         ],
         dtype=float
     )
-
 
     vmq135_raw = np.array(
         [
@@ -331,14 +232,6 @@ def extract_features(readings):
     # ========================================================
     # ENVIRONMENTAL COMPENSATION
     # ========================================================
-    #
-    # IMPORTANT:
-    #
-    # Compensation happens BEFORE dV/dt.
-    #
-    # Each sensor is compensated using the temperature and
-    # humidity corresponding to the same reading.
-    # ========================================================
 
     vmq2 = np.array(
         [
@@ -348,11 +241,10 @@ def extract_features(readings):
                 humidity[i],
                 "MQ2"
             )
-            for i in range(len(readings))
+            for i in range(30)
         ],
         dtype=float
     )
-
 
     vmq3 = np.array(
         [
@@ -362,11 +254,10 @@ def extract_features(readings):
                 humidity[i],
                 "MQ3"
             )
-            for i in range(len(readings))
+            for i in range(30)
         ],
         dtype=float
     )
-
 
     vmq135 = np.array(
         [
@@ -376,11 +267,10 @@ def extract_features(readings):
                 humidity[i],
                 "MQ135"
             )
-            for i in range(len(readings))
+            for i in range(30)
         ],
         dtype=float
     )
-
 
     vsen0567 = np.array(
         [
@@ -390,7 +280,7 @@ def extract_features(readings):
                 humidity[i],
                 "SEN0567"
             )
-            for i in range(len(readings))
+            for i in range(30)
         ],
         dtype=float
     )
@@ -414,31 +304,16 @@ def extract_features(readings):
     # dV/dt
     # ========================================================
     #
-    # SENSOR SAMPLING:
+    # ONLY FIRST FOUR READINGS
     #
-    # Reading 1 -> 0.0 s
-    # Reading 2 -> 0.1 s
-    # Reading 3 -> 0.2 s
-    # Reading 4 -> 0.3 s
+    # 0.0 -> 0.1
+    # 0.1 -> 0.2
+    # 0.2 -> 0.3
     #
-    # The trained pipeline uses ONLY THESE FIRST FOUR
-    # readings to calculate the maximum absolute slope.
-    #
-    # Therefore:
-    #
-    # np.diff(sensor_matrix[:4])
-    #
-    # produces 3 slope intervals:
-    #
-    # 0.0 -> 0.1 s
-    # 0.1 -> 0.2 s
-    # 0.2 -> 0.3 s
-    #
-    # DO NOT calculate dV/dt over all 30 readings.
+    # Same feature definition used during training.
     # ========================================================
 
     dt = 0.1
-
 
     early_slopes = (
         np.diff(
@@ -446,16 +321,6 @@ def extract_features(readings):
             axis=0
         ) / dt
     )
-
-
-    # Maximum absolute slope across:
-    #
-    # - MQ2
-    # - MQ3
-    # - MQ135
-    # - SEN0567
-    #
-    # and across the three initial time intervals.
 
     dVdt_max = float(
         np.max(
@@ -465,28 +330,20 @@ def extract_features(readings):
 
 
     # ========================================================
-    # FINAL SENSOR VALUES
-    # ========================================================
-    #
-    # Use the LAST 5 readings.
-    #
-    # 5 readings × 0.1 s = 0.5-second final averaging window.
+    # FINAL 5-READING AVERAGE
     # ========================================================
 
     VMQ2 = float(
         np.mean(vmq2[-5:])
     )
 
-
     VMQ3 = float(
         np.mean(vmq3[-5:])
     )
 
-
     VMQ135 = float(
         np.mean(vmq135[-5:])
     )
-
 
     VSEN0567 = float(
         np.mean(vsen0567[-5:])
@@ -501,25 +358,13 @@ def extract_features(readings):
         np.mean(temperature[-5:])
     )
 
-
     humidity_mean = float(
         np.mean(humidity[-5:])
     )
 
 
     # ========================================================
-    # FINAL 7-FEATURE VECTOR
-    # ========================================================
-    #
-    # MUST remain in exactly this order:
-    #
-    # [VMQ2,
-    #  VMQ3,
-    #  VMQ135,
-    #  VSEN0567,
-    #  dVdt_max,
-    #  temperature,
-    #  humidity]
+    # FINAL 7 FEATURES
     # ========================================================
 
     features = np.array(
@@ -532,7 +377,7 @@ def extract_features(readings):
             temperature_mean,
             humidity_mean
         ],
-        dtype=float
+        dtype=np.float32
     )
 
 
@@ -540,73 +385,65 @@ def extract_features(readings):
 
 
 # ============================================================
-# ML PREDICTION
+# RANDOM FOREST PREDICTION
 # ============================================================
 
 def predict(features):
 
-    # --------------------------------------------------------
-    # STANDARD SCALING
-    # --------------------------------------------------------
+    # ========================================================
+    # SCALE USING TRAINING SCALER
+    # ========================================================
 
-    scaled_features = (
-        features - scaler_mean
-    ) / scaler_scale
-
-
-    scaled_features = (
-        scaled_features.reshape(1, -1)
+    scaled_features = scaler.transform(
+        features.reshape(1, -1)
     )
 
 
-    # --------------------------------------------------------
-    # TRAINED KERAS MODEL
-    # --------------------------------------------------------
+    # ========================================================
+    # PREDICTION
+    # ========================================================
 
-    probabilities = model.predict(
-        scaled_features,
-        verbose=0
+    prediction_encoded = model.predict(
+        scaled_features
     )[0]
 
 
-    # --------------------------------------------------------
-    # HIGHEST PROBABILITY CLASS
-    # --------------------------------------------------------
-
-    prediction_index = int(
-        np.argmax(probabilities)
-    )
-
-
     prediction = str(
-        label_classes[prediction_index]
+        prediction_encoded
     )
 
 
-    # --------------------------------------------------------
-    # MODEL CONFIDENCE
-    #
-    # Directly from model output.
-    # --------------------------------------------------------
+    # ========================================================
+    # PROBABILITIES
+    # ========================================================
 
-    confidence = float(
-        probabilities[prediction_index]
-    )
+    probabilities_array = model.predict_proba(
+        scaled_features
+    )[0]
 
 
-    # --------------------------------------------------------
-    # ALL CLASS PROBABILITIES
-    # --------------------------------------------------------
+    # ========================================================
+    # MAP PROBABILITIES TO CLASS NAMES
+    # ========================================================
 
     probability_dict = {
 
-        str(label_classes[i]):
-        float(probabilities[i])
+        str(class_name):
+            float(probabilities_array[i])
 
-        for i in range(
-            len(label_classes)
+        for i, class_name in enumerate(
+            model.classes_
         )
     }
+
+
+    # ========================================================
+    # CONFIDENCE
+    # ========================================================
+
+    confidence = float(
+        np.max(probabilities_array)
+    )
 
 
     return (
@@ -698,18 +535,7 @@ def predict_endpoint():
 
 
         # ====================================================
-        # APPLICATION STATUS
-        # ====================================================
-        #
-        # Specification mapping:
-        #
-        #   SAFE      -> NON-THREAT
-        #   WEATHER   -> NON-THREAT
-        #   ALCOHOL   -> NON-THREAT
-        #   EXPLOSIVE -> THREAT
-        #   NARCOTIC  -> THREAT
-        #
-        # This does NOT modify ML confidence or probabilities.
+        # THREAT STATUS
         # ====================================================
 
         if prediction in [
@@ -798,64 +624,64 @@ def predict_endpoint():
         # ====================================================
 
         print()
-        print("=" * 40)
-        print("           ML PREDICTION")
-        print("=" * 40)
+        print("=" * 50)
+        print("             ML PREDICTION")
+        print("=" * 50)
 
         print(
-            f"System Status : "
-            f"{system_status}"
+            f"System Status : {system_status}"
         )
 
         print(
-            f"Prediction    : "
-            f"{prediction}"
+            f"Prediction    : {prediction}"
         )
 
         print(
-            f"Confidence    : "
-            f"{confidence:.4f}"
+            f"Confidence    : {confidence:.4f}"
         )
 
         print()
         print("Features:")
 
         print(
-            f"  VMQ2        : "
-            f"{features[0]:.5f}"
+            f"  VMQ2        : {features[0]:.5f}"
         )
 
         print(
-            f"  VMQ3        : "
-            f"{features[1]:.5f}"
+            f"  VMQ3        : {features[1]:.5f}"
         )
 
         print(
-            f"  VMQ135      : "
-            f"{features[2]:.5f}"
+            f"  VMQ135      : {features[2]:.5f}"
         )
 
         print(
-            f"  VSEN0567    : "
-            f"{features[3]:.5f}"
+            f"  VSEN0567    : {features[3]:.5f}"
         )
 
         print(
-            f"  dVdt_max    : "
-            f"{features[4]:.5f}"
+            f"  dVdt_max    : {features[4]:.5f}"
         )
 
         print(
-            f"  temperature : "
-            f"{features[5]:.2f}"
+            f"  temperature : {features[5]:.2f}"
         )
 
         print(
-            f"  humidity    : "
-            f"{features[6]:.2f}"
+            f"  humidity    : {features[6]:.2f}"
         )
 
-        print("=" * 40)
+        print()
+        print("Probabilities:")
+
+        for label, probability in probabilities.items():
+
+            print(
+                f"  {label:10s}: "
+                f"{probability:.4f}"
+            )
+
+        print("=" * 50)
 
 
         return jsonify(
@@ -895,7 +721,7 @@ def health():
             "ok",
 
         "model":
-            "sentry_tinyml.keras"
+            "random_forest.joblib"
 
     })
 
@@ -907,16 +733,21 @@ def health():
 if __name__ == "__main__":
 
     print()
-    print("=" * 40)
+    print("=" * 50)
     print("       SENTRY ML SERVER RUNNING")
-    print("=" * 40)
+    print("=" * 50)
 
     print(
         "Server: "
         "http://127.0.0.1:5000"
     )
 
-    print("=" * 40)
+    print(
+        "Model: "
+        "random_forest.joblib"
+    )
+
+    print("=" * 50)
     print()
 
     app.run(

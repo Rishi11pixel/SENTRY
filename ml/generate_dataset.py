@@ -1,193 +1,351 @@
-from pathlib import Path
-
+import os
 import numpy as np
 import pandas as pd
 
-from config import (
-    CLASSES,
-    COMPENSATION_ALPHA_H,
-    COMPENSATION_ALPHA_T,
-    FEATURES,
-    H_REF,
-    MODEL_BASELINES,
-    N_SAMPLES,
-    SAMPLE_INTERVAL_S,
-    T_REF,
-)
+SEED = 42
+rng = np.random.default_rng(SEED)
 
-ROOT = Path(__file__).resolve().parent.parent
-OUTPUT_DIR = ROOT / "data" / "raw"
-RESULTS_DIR = ROOT / "results"
-TRAIN_FILE = OUTPUT_DIR / "sentry_synthetic_dataset.csv"
-TEST_FILE = OUTPUT_DIR / "sentry_synthetic_test.csv"
-TRAIN_PER_CLASS = 12_000
-TEST_PER_CLASS = 2_400
-TRAIN_SEED = 87
-TEST_SEED = 1807
-SENSOR_NAMES = ["VMQ2", "VMQ3", "VMQ135", "VSEN0567"]
-BASELINE = np.array([MODEL_BASELINES[sensor] for sensor in SENSOR_NAMES], dtype=np.float32)
-NOISE = np.array([0.012, 0.014, 0.013, 0.012], dtype=np.float32)
+TRAIN_SAMPLES_PER_CLASS = 12000
+TEST_SAMPLES_PER_CLASS = 2400
 
+CLASSES = ["SAFE", "WEATHER", "ALCOHOL", "EXPLOSIVE", "NARCOTIC"]
 
-def correlated_noise(rng, n, sigma, alpha=0.90):
-    raw = rng.normal(0.0, sigma, n)
-    output = np.zeros(n)
-    output[0] = raw[0]
-    for i in range(1, n):
-        output[i] = alpha * output[i - 1] + np.sqrt(1.0 - alpha**2) * raw[i]
-    return output
+# Actual ESP32 MQ ADC baselines
+REAL_BASELINES = {
+    "MQ2": 3069.0,
+    "MQ3": 530.33,
+    "MQ135": 1043.27,
+}
 
+# Model-space baselines used by the existing pipeline
+MODEL_BASELINES = {
+    "MQ2": 0.82,
+    "MQ3": 0.74,
+    "MQ135": 0.91,
+}
 
-def sigmoid(t, center, width):
-    return 1.0 / (1.0 + np.exp(-(t - center) / width))
+# Prototype environmental compensation coefficients
+ALPHA_H = {
+    "MQ2": 0.0018,
+    "MQ3": 0.0014,
+    "MQ135": 0.0022,
+    "SEN0567": 0.0016,
+}
 
+ALPHA_T = {
+    "MQ2": 0.0008,
+    "MQ3": 0.0007,
+    "MQ135": 0.0009,
+    "SEN0567": 0.0008,
+}
 
-def generate_environment(label, rng, condition_override=None):
-    if label == "WEATHER" or condition_override is not None:
-        condition = condition_override or rng.choice(
-            ["dry", "normal", "humid", "very_humid", "cold", "hot", "hot_humid", "hot_dry"],
-            p=[0.10, 0.16, 0.14, 0.12, 0.10, 0.12, 0.14, 0.12],
-        )
-        ranges = {
-            "dry": ((20.0, 30.0), (18.0, 30.0)),
-            "normal": ((40.0, 60.0), (20.0, 30.0)),
-            "humid": ((70.0, 80.0), (20.0, 30.0)),
-            "very_humid": ((85.0, 90.0), (20.0, 30.0)),
-            "cold": ((40.0, 70.0), (10.0, 18.0)),
-            "hot": ((40.0, 70.0), (35.0, 40.0)),
-            "hot_humid": ((70.0, 90.0), (35.0, 40.0)),
-            "hot_dry": ((20.0, 35.0), (35.0, 40.0)),
-        }
-        humidity_range, temperature_range = ranges[condition]
-        humidity = rng.uniform(*humidity_range)
-        temperature = rng.uniform(*temperature_range)
-        humidity_end = np.clip(humidity + rng.uniform(-5.0, 18.0), 20.0, 90.0)
-        temperature_end = np.clip(temperature + rng.uniform(-3.0, 5.0), 10.0, 40.0)
-        return temperature, humidity, temperature_end, humidity_end
+REFERENCE_H = 50.0
+REFERENCE_T = 25.0
 
-    temperature = rng.uniform(20.0, 30.0)
-    humidity = rng.uniform(40.0, 60.0)
-    if label == "SAFE":
-        if rng.random() < 0.65:
-            humidity = rng.uniform(20.0, 90.0)
-            temperature = rng.uniform(10.0, 40.0)
-        else:
-            humidity = rng.uniform(30.0, 75.0)
-            temperature = rng.uniform(16.0, 34.0)
-    return temperature, humidity, temperature, humidity
+DT = 0.1
+N_SAMPLES = 30
 
 
-def event_response(label, t, rng):
-    response = np.zeros((N_SAMPLES, 4), dtype=np.float32)
-    onset = rng.uniform(0.08, 2.35)
-
-    if label == "SAFE":
-        if rng.random() < 0.15:
-            sensor = rng.integers(0, 4)
-            response[:, sensor] += rng.uniform(0.01, 0.06) * np.exp(
-                -0.5 * ((t - rng.uniform(0.5, 2.5)) / rng.uniform(0.10, 0.30)) ** 2
-            )
-        return response
-
-    if label == "WEATHER":
-        drift = rng.uniform(0.03, 0.34)
-        rise = sigmoid(t, onset + rng.uniform(0.15, 0.45), rng.uniform(0.45, 0.85))
-        response += drift * rise[:, None] * rng.uniform(0.70, 1.10, 4)
-        return response
-
-    center = onset + rng.uniform(-0.10, 0.30)
-    event_strength = rng.choice([0.05, 0.25, 1.00], p=[0.45, 0.35, 0.20])
-    if label == "ALCOHOL":
-        event = sigmoid(t, center, rng.uniform(0.05, 0.16))
-        event *= 1.0 - rng.uniform(0.35, 0.75) * sigmoid(t, center + rng.uniform(0.35, 0.90), rng.uniform(0.18, 0.45))
-        amplitude = rng.uniform(1.25, 2.15) * event_strength
-        response[:, 1] += amplitude * event
-        response[:, 0] += rng.uniform(0.05, 0.18) * amplitude * event
-        response[:, 2] += rng.uniform(0.04, 0.20) * amplitude * event
-        response[:, 3] += rng.uniform(0.02, 0.12) * amplitude * event
-    elif label == "EXPLOSIVE":
-        event = sigmoid(t, center, rng.uniform(0.10, 0.27))
-        event *= 1.0 - rng.uniform(0.15, 0.55) * sigmoid(t, center + rng.uniform(0.55, 1.35), rng.uniform(0.30, 0.70))
-        amplitude = rng.uniform(1.15, 1.70) * event_strength
-        response[:, 3] += amplitude * rng.uniform(0.80, 1.10) * event
-        response[:, 2] += amplitude * rng.uniform(0.75, 1.10) * event
-        response[:, 0] += amplitude * rng.uniform(0.25, 0.48) * event
-        response[:, 1] += amplitude * rng.uniform(0.05, 0.22) * event
-    elif label == "NARCOTIC":
-        event = sigmoid(t, center, rng.uniform(0.12, 0.30))
-        event *= 1.0 - rng.uniform(0.15, 0.50) * sigmoid(t, center + rng.uniform(0.60, 1.45), rng.uniform(0.35, 0.80))
-        amplitude = rng.uniform(1.35, 2.00) * event_strength
-        response[:, 1] += amplitude * rng.uniform(0.78, 1.10) * event
-        response[:, 2] += amplitude * rng.uniform(0.72, 1.08) * event
-        response[:, 0] += amplitude * rng.uniform(0.24, 0.48) * event
-        response[:, 3] += amplitude * rng.uniform(0.02, 0.12) * event
-    return response
-
-
-def generate_window(label, rng, apply_compensation=True, condition_override=None):
-    t = np.arange(N_SAMPLES, dtype=np.float32) * SAMPLE_INTERVAL_S
-    temperature, humidity, temperature_end, humidity_end = generate_environment(label, rng, condition_override)
-    environmental_temperature = np.linspace(temperature, temperature_end, N_SAMPLES)
-    environmental_humidity = np.linspace(humidity, humidity_end, N_SAMPLES)
-    offsets = rng.normal(0.0, 0.018, 4)
-    gains = rng.normal(1.0, 0.045, 4)
-    raw = np.tile(BASELINE, (N_SAMPLES, 1)) * gains + offsets
-    humidity_distortion = (environmental_humidity - H_REF)[:, None] * COMPENSATION_ALPHA_H
-    temperature_distortion = (environmental_temperature - T_REF)[:, None] * COMPENSATION_ALPHA_T
-    raw += humidity_distortion + temperature_distortion
-    raw += correlated_noise(rng, N_SAMPLES, 0.010, 0.94)[:, None]
-    raw += rng.normal(0.0, NOISE, size=(N_SAMPLES, 4))
-    raw += event_response(label, t, rng)
-    if label == "WEATHER":
-        raw += ((environmental_humidity - H_REF) / 40.0)[:, None] * rng.uniform(0.005, 0.025, 4)
-    adc_levels = rng.choice([4095, 8191], p=[0.7, 0.3])
-    raw = np.clip(raw, 0.02, 3.25)
-    raw = np.round(raw / 3.3 * adc_levels) / adc_levels * 3.3
-    compensated = raw - humidity_distortion - temperature_distortion if apply_compensation else raw.copy()
-    early_slopes = np.diff(compensated[:4], axis=0) / SAMPLE_INTERVAL_S
-    d_v_dt_max = float(np.max(np.abs(early_slopes)))
-    final_values = compensated[-5:].mean(axis=0)
-    feature_values = [*final_values, d_v_dt_max, float(environmental_temperature[-1]), float(environmental_humidity[-1])]
-    raw_values = [*raw[-5:].mean(axis=0), float(np.max(np.abs(np.diff(raw[:4], axis=0) / SAMPLE_INTERVAL_S)))]
-    return feature_values, raw_values
-
-
-def generate_dataset(samples_per_class, seed, apply_compensation=True, condition_override=None):
-    rng = np.random.default_rng(seed)
-    rows = []
-    raw_rows = []
-    for label in CLASSES:
-        print(f"Generating {samples_per_class:,} samples: {label}")
-        for _ in range(samples_per_class):
-            features, raw_values = generate_window(label, rng, apply_compensation, condition_override)
-            rows.append(features + [label])
-            raw_rows.append(raw_values + [label])
-    return pd.DataFrame(rows, columns=FEATURES + ["label"]), pd.DataFrame(
-        raw_rows, columns=["VMQ2", "VMQ3", "VMQ135", "VSEN0567", "dVdt_max", "label"]
+def adc_from_model(model_value, sensor):
+    return (
+        model_value
+        / MODEL_BASELINES[sensor]
+        * REAL_BASELINES[sensor]
     )
 
 
-def main():
-    print("SENTRY synthetic sensor dataset generation")
-    print(f"Training seed: {TRAIN_SEED}; final-test seed: {TEST_SEED}")
-    print("Compensation equation: V_comp = V_raw - alpha_H*(humidity - 50.0) - alpha_T*(temperature - 25.0)")
-    print("Prototype synthetic coefficients, not experimentally calibrated constants:")
-    for sensor, alpha_h, alpha_t in zip(SENSOR_NAMES, COMPENSATION_ALPHA_H, COMPENSATION_ALPHA_T):
-        print(f"  {sensor}: alpha_H={alpha_h:.6f}, alpha_T={alpha_t:.6f}")
-    train_df, train_raw_df = generate_dataset(TRAIN_PER_CLASS, TRAIN_SEED)
-    test_df, _ = generate_dataset(TEST_PER_CLASS, TEST_SEED)
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
-    train_df.to_csv(TRAIN_FILE, index=False)
-    test_df.to_csv(TEST_FILE, index=False)
-    print("\nRaw sensor range statistics by class:")
-    print(train_raw_df.groupby("label").agg(["min", "max", "mean"]).round(4).to_string())
-    print("\nCompensated sensor range statistics by class:")
-    print(train_df.groupby("label")[SENSOR_NAMES].agg(["min", "max", "mean"]).round(4).to_string())
-    print(f"\nTraining samples: {len(train_df):,}; final test samples: {len(test_df):,}")
-    print(train_df["label"].value_counts().sort_index().to_string())
-    print("Synthetic data only; not laboratory-calibrated.")
+def compensate(v, sensor, temperature, humidity):
+    return (
+        v
+        - ALPHA_H[sensor] * (humidity - REFERENCE_H)
+        - ALPHA_T[sensor] * (temperature - REFERENCE_T)
+    )
+
+
+def make_window(label):
+    """
+    Generate a synthetic 30-sample window in the same physical
+    representation used by the ESP32:
+
+        MQ2    -> ADC
+        MQ3    -> ADC
+        MQ135  -> ADC
+        SEN0567 -> volts
+        T      -> Celsius
+        H      -> relative humidity
+    """
+
+    # Environmental conditions
+    temperature = rng.normal(25.0, 2.0)
+    humidity = np.clip(rng.normal(50.0, 8.0), 20.0, 85.0)
+
+    # Base model-space sensor levels.
+    # These are deliberately centered around the actual model baselines.
+    base = np.array([
+        MODEL_BASELINES["MQ2"],
+        MODEL_BASELINES["MQ3"],
+        MODEL_BASELINES["MQ135"],
+        0.34,
+    ])
+
+    if label == "SAFE":
+        target = base + rng.normal(0, [0.025, 0.025, 0.030, 0.015])
+
+        event_strength = 0.0
+        onset = 0
+
+    elif label == "WEATHER":
+        # Environmental shift rather than a chemical event.
+        env = (
+            0.004 * (humidity - 50.0)
+            + 0.006 * (temperature - 25.0)
+        )
+
+        target = base.copy()
+        target += env * np.array([0.8, 0.6, 1.0, 0.7])
+        target += rng.normal(0, [0.035, 0.035, 0.040, 0.020])
+
+        event_strength = 0.0
+        onset = 0
+
+    elif label == "ALCOHOL":
+        target = base + np.array([
+            0.10,
+            0.34,
+            0.16,
+            0.04,
+        ])
+
+        target += rng.normal(0, [0.035, 0.035, 0.040, 0.020])
+
+        event_strength = rng.uniform(0.6, 1.0)
+        onset = rng.integers(4, 15)
+
+    elif label == "EXPLOSIVE":
+        target = base + np.array([
+            0.34,
+            0.14,
+            0.30,
+            0.12,
+        ])
+
+        target += rng.normal(0, [0.040, 0.040, 0.045, 0.025])
+
+        event_strength = rng.uniform(0.8, 1.2)
+        onset = rng.integers(3, 10)
+
+    elif label == "NARCOTIC":
+        target = base + np.array([
+            0.18,
+            0.10,
+            0.27,
+            0.20,
+        ])
+
+        target += rng.normal(0, [0.040, 0.040, 0.045, 0.025])
+
+        event_strength = rng.uniform(0.4, 0.85)
+        onset = rng.integers(6, 17)
+
+    else:
+        raise ValueError(label)
+
+    # Build 30-sample model-space trajectories first.
+    trajectory = np.zeros((N_SAMPLES, 4))
+
+    for i in range(N_SAMPLES):
+
+        # Small natural sensor drift
+        drift = rng.normal(
+            0,
+            [0.003, 0.003, 0.004, 0.002]
+        )
+
+        # Smooth event transition
+        if i >= onset and event_strength > 0:
+            progress = min(
+                1.0,
+                (i - onset + 1) / 6.0
+            )
+
+            event = (
+                target - base
+            ) * progress * event_strength
+
+            value = base + event
+        else:
+            value = base.copy()
+
+        value += drift
+        value += rng.normal(
+            0,
+            [0.012, 0.012, 0.015, 0.008]
+        )
+
+        trajectory[i] = value
+
+    # Convert MQ model-space values back into ESP32-like ADC readings.
+    mq2_adc = adc_from_model(
+        trajectory[:, 0],
+        "MQ2"
+    )
+
+    mq3_adc = adc_from_model(
+        trajectory[:, 1],
+        "MQ3"
+    )
+
+    mq135_adc = adc_from_model(
+        trajectory[:, 2],
+        "MQ135"
+    )
+
+    # SEN0567 is already represented as voltage.
+    sen0567_v = trajectory[:, 3]
+
+    # Add realistic ADC noise / quantisation.
+    mq2_adc = np.clip(
+        mq2_adc + rng.normal(0, 12, N_SAMPLES),
+        0,
+        4095
+    )
+
+    mq3_adc = np.clip(
+        mq3_adc + rng.normal(0, 4, N_SAMPLES),
+        0,
+        4095
+    )
+
+    mq135_adc = np.clip(
+        mq135_adc + rng.normal(0, 7, N_SAMPLES),
+        0,
+        4095
+    )
+
+    sen0567_v = np.clip(
+        sen0567_v + rng.normal(0, 0.006, N_SAMPLES),
+        0.0,
+        3.3
+    )
+
+    # Environmental readings fluctuate slightly during the window.
+    temperature_series = (
+        temperature
+        + rng.normal(0, 0.15, N_SAMPLES)
+    )
+
+    humidity_series = (
+        humidity
+        + rng.normal(0, 0.5, N_SAMPLES)
+    )
+
+    # Convert MQ ADC back to model-space exactly as deployment will.
+    mq2_model = (
+        mq2_adc / REAL_BASELINES["MQ2"]
+    ) * MODEL_BASELINES["MQ2"]
+
+    mq3_model = (
+        mq3_adc / REAL_BASELINES["MQ3"]
+    ) * MODEL_BASELINES["MQ3"]
+
+    mq135_model = (
+        mq135_adc / REAL_BASELINES["MQ135"]
+    ) * MODEL_BASELINES["MQ135"]
+
+    # Environmental compensation
+    mq2_comp = compensate(
+        mq2_model,
+        "MQ2",
+        temperature_series,
+        humidity_series,
+    )
+
+    mq3_comp = compensate(
+        mq3_model,
+        "MQ3",
+        temperature_series,
+        humidity_series,
+    )
+
+    mq135_comp = compensate(
+        mq135_model,
+        "MQ135",
+        temperature_series,
+        humidity_series,
+    )
+
+    sen_comp = compensate(
+        sen0567_v,
+        "SEN0567",
+        temperature_series,
+        humidity_series,
+    )
+
+    # Early dV/dt: first four samples.
+    early = np.column_stack([
+        mq2_comp[:4],
+        mq3_comp[:4],
+        mq135_comp[:4],
+        sen_comp[:4],
+    ])
+
+    slopes = np.diff(early, axis=0) / DT
+    dVdt_max = float(np.max(np.abs(slopes)))
+
+    # Final 5-sample averages.
+    final_start = N_SAMPLES - 5
+
+    features = {
+        "VMQ2": float(np.mean(mq2_comp[final_start:])),
+        "VMQ3": float(np.mean(mq3_comp[final_start:])),
+        "VMQ135": float(np.mean(mq135_comp[final_start:])),
+        "VSEN0567": float(np.mean(sen_comp[final_start:])),
+        "dVdt_max": dVdt_max,
+        "temperature": float(
+            np.mean(temperature_series[final_start:])
+        ),
+        "humidity": float(
+            np.mean(humidity_series[final_start:])
+        ),
+        "label": label,
+    }
+
+    return features
+
+
+def generate_dataset(samples_per_class, path):
+    rows = []
+
+    for label in CLASSES:
+        print(f"Generating {label}...")
+
+        for _ in range(samples_per_class):
+            rows.append(make_window(label))
+
+    df = pd.DataFrame(rows)
+
+    os.makedirs(
+        os.path.dirname(path),
+        exist_ok=True
+    )
+
+    df.to_csv(path, index=False)
+
+    print()
+    print(path)
+    print("Shape:", df.shape)
+    print(df["label"].value_counts())
+    print()
 
 
 if __name__ == "__main__":
-    main()
+
+    generate_dataset(
+        TRAIN_SAMPLES_PER_CLASS,
+        "data/raw/sentry_synthetic_dataset.csv",
+    )
+
+    generate_dataset(
+        TEST_SAMPLES_PER_CLASS,
+        "data/raw/sentry_synthetic_test.csv",
+    )
