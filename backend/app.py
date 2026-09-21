@@ -15,13 +15,14 @@ from flask import Flask, jsonify, request
 
 
 WINDOW_SIZE = 30
-READING_FIELDS = ("temperature", "humidity", "mq2", "mq3", "mq135", "sen0567")
+READING_FIELDS = ("temperature", "humidity", "mq2", "mq3", "mq135")
 MODEL_LABELS = ("SAFE", "WEATHER", "ALCOHOL", "EXPLOSIVE", "NARCOTIC")
 NON_THREAT_LABELS = {"SAFE", "WEATHER", "ALCOHOL"}
 THREAT_LABELS = {"EXPLOSIVE", "NARCOTIC"}
 OPTIONAL_METADATA_FIELDS = ("source_status", "test_object")
 
-BACKEND_HOST = os.getenv("SENTRY_BACKEND_HOST", "127.0.0.1")
+# Bind to all local network interfaces so the ESP32 on the LAN can POST readings.
+BACKEND_HOST = os.getenv("SENTRY_BACKEND_HOST", "0.0.0.0")
 BACKEND_PORT = int(os.getenv("SENTRY_BACKEND_PORT", "8000"))
 ML_SERVER_URL = os.getenv("SENTRY_ML_URL", "http://127.0.0.1:5000")
 ML_TIMEOUT_SECONDS = float(os.getenv("SENTRY_ML_TIMEOUT_SECONDS", "10"))
@@ -298,7 +299,6 @@ def validate_reading(payload: Any) -> tuple[dict[str, Any] | None, str | None]:
         "mq2": (0, 100000),
         "mq3": (0, 100000),
         "mq135": (0, 100000),
-        "sen0567": (0, 100),
     }
     for field, (minimum, maximum) in ranges.items():
         if not minimum <= reading[field] <= maximum:
@@ -367,7 +367,7 @@ def validate_ml_response(result: Any) -> dict[str, Any]:
         if field == "probabilities" and any(not 0 <= float(value) <= 1 for value in values.values()):
             raise ValueError("ML server returned an invalid probability range.")
 
-    expected_features = {"VMQ2", "VMQ3", "VMQ135", "VSEN0567", "dVdt_max", "temperature", "humidity"}
+    expected_features = {"VMQ2", "VMQ3", "VMQ135", "dVdt_max", "temperature", "humidity"}
     if "features" in result and set(result["features"]) != expected_features:
         raise ValueError("ML server returned an unexpected feature structure.")
     return result

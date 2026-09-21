@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, json, request, jsonify
 import numpy as np
 from pathlib import Path
 import tensorflow as tf
@@ -38,7 +38,11 @@ MODEL_DIR = ROOT / "ml" / "models" / "tinyml"
 MODEL_PATH = MODEL_DIR / "sentry_tinyml.keras"
 SCALER_MEAN_PATH = MODEL_DIR / "scaler_mean.npy"
 SCALER_SCALE_PATH = MODEL_DIR / "scaler_scale.npy"
-LABELS_PATH = MODEL_DIR / "label_classes.npy"
+LABELS_PATH = MODEL_DIR / "labels.json"
+LEGACY_LABELS_PATH = MODEL_DIR / "label.json"
+
+if not LABELS_PATH.exists() and LEGACY_LABELS_PATH.exists():
+    LABELS_PATH = LEGACY_LABELS_PATH
 
 
 # ============================================================
@@ -65,10 +69,8 @@ scaler_scale = np.load(
     SCALER_SCALE_PATH
 )
 
-label_classes = np.load(
-    LABELS_PATH,
-    allow_pickle=True
-)
+with open(LABELS_PATH, "r", encoding="utf-8") as f:
+    label_classes = json.load(f)
 
 label_classes = [
     str(label)
