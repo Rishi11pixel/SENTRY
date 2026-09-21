@@ -28,27 +28,26 @@ LABELS = [
 
 
 def clip_features(X):
-    X[:, 0] = np.clip(X[:, 0], 0.20, 1.20)   # MQ2
-    X[:, 1] = np.clip(X[:, 1], 1.50, 3.50)   # MQ3
-    X[:, 2] = np.clip(X[:, 2], 0.15, 1.00)   # MQ135
-    X[:, 3] = np.clip(X[:, 3], 0.00, 1.20)   # dVdt
-    X[:, 4] = np.clip(X[:, 4], 20.0, 40.0)   # temperature
-    X[:, 5] = np.clip(X[:, 5], 30.0, 90.0)   # humidity
+    X[:, 0] = np.clip(X[:, 0], 0.20, 1.20)
+    X[:, 1] = np.clip(X[:, 1], 1.50, 3.50)
+    X[:, 2] = np.clip(X[:, 2], 0.15, 1.00)
+    X[:, 3] = np.clip(X[:, 3], 0.00, 1.20)
+    X[:, 4] = np.clip(X[:, 4], 20.0, 40.0)
+    X[:, 5] = np.clip(X[:, 5], 30.0, 90.0)
     return X
 
 
 # ============================================================
 # SAFE
-# Based around the actual three-MQ hardware operating region.
 # ============================================================
 
 safe_mean = np.array([
-    0.455,   # VMQ2
-    2.615,   # VMQ3
-    0.375,   # VMQ135
-    0.12,    # dVdt_max
-    31.1,    # temperature
-    68.0     # humidity
+    0.455,
+    2.615,
+    0.375,
+    0.12,
+    31.1,
+    68.0
 ])
 
 safe_std = np.array([
@@ -71,8 +70,6 @@ safe = clip_features(safe)
 
 # ============================================================
 # WEATHER
-# Environmental changes / gradual sensor drift.
-# Not a chemical threat.
 # ============================================================
 
 drift = rng.uniform(0.0, 1.0, N_PER_CLASS)
@@ -91,14 +88,13 @@ weather = clip_features(weather)
 
 # ============================================================
 # ALCOHOL
-# Synthetic response pattern.
 # ============================================================
 
 alcohol_mean = np.array([
-    0.62,   # MQ2
-    2.95,   # MQ3
-    0.55,   # MQ135
-    0.32,   # dVdt
+    0.62,
+    2.95,
+    0.55,
+    0.32,
     31.1,
     68.0
 ])
@@ -123,7 +119,7 @@ alcohol = clip_features(alcohol)
 
 # ============================================================
 # EXPLOSIVE
-# Synthetic response pattern.
+# Synthetic hazardous signature
 # ============================================================
 
 explosive_mean = np.array([
@@ -155,7 +151,7 @@ explosive = clip_features(explosive)
 
 # ============================================================
 # NARCOTIC
-# Synthetic response pattern.
+# Synthetic hazardous signature
 # ============================================================
 
 narcotic_mean = np.array([
@@ -186,6 +182,122 @@ narcotic = clip_features(narcotic)
 
 
 # ============================================================
+# CONTROLLED SENSOR OVERLAP
+#
+# IMPORTANT:
+# These samples are STILL labelled SAFE/WEATHER.
+#
+# They represent benign/ambiguous sensor responses that
+# partially overlap hazardous regions because gas sensors
+# are cross-sensitive.
+#
+# We do NOT label these as household products.
+# ============================================================
+
+def make_overlap_samples(base_mean, target_mean, n, overlap):
+    base_mean = np.asarray(base_mean)
+    target_mean = np.asarray(target_mean)
+
+    mean = (
+        (1.0 - overlap) * base_mean
+        + overlap * target_mean
+    )
+
+    std = np.array([
+        0.045,   # VMQ2
+        0.060,   # VMQ3
+        0.040,   # VMQ135
+        0.11,    # dVdt_max
+        0.55,    # temperature
+        2.2,     # humidity
+    ])
+
+    X = rng.normal(
+        loc=mean,
+        scale=std,
+        size=(n, len(FEATURES))
+    )
+
+    return clip_features(X)
+
+
+# ------------------------------------------------------------
+# EXPLOSIVE-BOUNDARY OVERLAP
+# ------------------------------------------------------------
+
+EXPLOSIVE_OVERLAP = 1000
+
+safe_explosive_overlap = make_overlap_samples(
+    safe_mean,
+    explosive_mean,
+    EXPLOSIVE_OVERLAP,
+    overlap=0.22
+)
+
+weather_explosive_overlap = make_overlap_samples(
+    weather.mean(axis=0),
+    explosive_mean,
+    EXPLOSIVE_OVERLAP,
+    overlap=0.20
+)
+
+
+# ------------------------------------------------------------
+# NARCOTIC-BOUNDARY OVERLAP
+# ------------------------------------------------------------
+
+NARCOTIC_OVERLAP = 1000
+
+safe_narcotic_overlap = make_overlap_samples(
+    safe_mean,
+    narcotic_mean,
+    NARCOTIC_OVERLAP,
+    overlap=0.22
+)
+
+weather_narcotic_overlap = make_overlap_samples(
+    weather.mean(axis=0),
+    narcotic_mean,
+    NARCOTIC_OVERLAP,
+    overlap=0.20
+)
+
+
+# ============================================================
+# INSERT OVERLAP INTO SAFE / WEATHER
+#
+# Total class size remains 6000.
+# ============================================================
+
+safe_regular_count = (
+    N_PER_CLASS
+    - len(safe_explosive_overlap)
+    - len(safe_narcotic_overlap)
+)
+
+weather_regular_count = (
+    N_PER_CLASS
+    - len(weather_explosive_overlap)
+    - len(weather_narcotic_overlap)
+)
+
+safe = np.vstack([
+    safe[:safe_regular_count],
+    safe_explosive_overlap,
+    safe_narcotic_overlap,
+])
+
+weather = np.vstack([
+    weather[:weather_regular_count],
+    weather_explosive_overlap,
+    weather_narcotic_overlap,
+])
+
+safe = clip_features(safe)
+weather = clip_features(weather)
+
+
+# ============================================================
 # BUILD DATASET
 # ============================================================
 
@@ -203,7 +315,11 @@ for X, label in [
     datasets.append(df)
 
 
-dataset = pd.concat(datasets, ignore_index=True)
+dataset = pd.concat(
+    datasets,
+    ignore_index=True
+)
+
 
 # Shuffle
 dataset = dataset.sample(
@@ -218,7 +334,10 @@ dataset = dataset.sample(
 
 output_path = Path(__file__).resolve().parent / "dataset.csv"
 
-dataset.to_csv(output_path, index=False)
+dataset.to_csv(
+    output_path,
+    index=False
+)
 
 
 # ============================================================
@@ -239,6 +358,12 @@ print(dataset["label"].value_counts())
 
 print("\nFeature ranges:")
 print(dataset[FEATURES].agg(["min", "max"]).T)
+
+print("\nOverlap samples:")
+print(f"  SAFE/EXPLOSIVE boundary : {EXPLOSIVE_OVERLAP}")
+print(f"  WEATHER/EXPLOSIVE       : {EXPLOSIVE_OVERLAP}")
+print(f"  SAFE/NARCOTIC boundary  : {NARCOTIC_OVERLAP}")
+print(f"  WEATHER/NARCOTIC        : {NARCOTIC_OVERLAP}")
 
 print("\nFirst 5 rows:")
 print(dataset.head())
