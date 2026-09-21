@@ -278,11 +278,6 @@ def extract_features(readings):
     # ========================================================
     # SENSOR MATRIX
     # ========================================================
-    #
-    # ONLY THE THREE MQ SENSORS ARE USED.
-    #
-    # SEN0567 IS COMPLETELY REMOVED.
-    # ========================================================
 
     sensor_matrix = np.column_stack(
         (
@@ -295,12 +290,6 @@ def extract_features(readings):
 
     # ========================================================
     # dV/dt
-    # ========================================================
-    #
-    # Calculated from the first 4 readings of the
-    # three MQ sensors, exactly as defined during training.
-    #
-    # Sampling interval = 100 ms = 0.1 s
     # ========================================================
 
     dt = 0.1
@@ -352,16 +341,6 @@ def extract_features(readings):
     # ========================================================
     # FINAL 6 FEATURES
     # ========================================================
-    #
-    # MUST MATCH TRAINING ORDER:
-    #
-    # VMQ2
-    # VMQ3
-    # VMQ135
-    # dVdt_max
-    # temperature
-    # humidity
-    # ========================================================
 
     features = np.array(
         [
@@ -395,6 +374,208 @@ def scale_features(features):
 
 
 # ============================================================
+# SENSOR-RESPONSE REGION DETECTION
+# ============================================================
+#
+# IMPORTANT:
+#
+# These are prototype sensor-response regions.
+# They are NOT chemical identification.
+#
+# Desired behavior:
+#
+# NORMAL
+#   -> SAFE / WEATHER
+#
+# MOOV-LIKE RESPONSE
+#   -> SAFE
+#   -> ALCOHOL probability rises
+#   -> EXPLOSIVE probability rises
+#
+# HARPIC-LIKE RESPONSE
+#   -> SAFE
+#   -> EXPLOSIVE probability rises
+#   -> NARCOTIC probability rises
+#
+# ALCOHOL / WEATHER / actual synthetic threat regions
+#   -> handled by the neural network
+#
+# ============================================================
+
+def detect_sensor_region(features):
+
+    vmq2 = float(features[0])
+    vmq3 = float(features[1])
+    vmq135 = float(features[2])
+    dvdt = float(features[3])
+    temperature = float(features[4])
+    humidity = float(features[5])
+
+
+    # ========================================================
+    # NORMAL HARDWARE OPERATING REGION
+    # ========================================================
+    #
+    # Based on your previously observed normal readings.
+    # ========================================================
+
+    normal_region = (
+        0.32 <= vmq2 <= 0.47 and
+        2.35 <= vmq3 <= 2.62 and
+        0.25 <= vmq135 <= 0.52 and
+        0.00 <= dvdt <= 0.30 and
+        29.0 <= temperature <= 34.0 and
+        60.0 <= humidity <= 75.0
+    )
+
+
+    # ========================================================
+    # MOOV-LIKE RESPONSE
+    # ========================================================
+    #
+    # Based on the actual Moov readings previously measured.
+    # ========================================================
+
+    moov_region = (
+        0.43 <= vmq2 <= 0.52 and
+        2.50 <= vmq3 <= 2.68 and
+        0.62 <= vmq135 <= 0.90 and
+        0.00 <= dvdt <= 0.50 and
+        29.0 <= temperature <= 33.5 and
+        63.0 <= humidity <= 76.0
+    )
+
+
+    # ========================================================
+    # HARPIC-LIKE RESPONSE
+    # ========================================================
+    #
+    # Based on the actual Harpic readings previously measured.
+    # ========================================================
+
+    harpic_region = (
+        0.52 <= vmq2 <= 0.75 and
+        2.60 <= vmq3 <= 2.90 and
+        0.55 <= vmq135 <= 0.95 and
+        0.00 <= dvdt <= 0.35 and
+        29.0 <= temperature <= 33.5 and
+        62.0 <= humidity <= 76.0
+    )
+
+
+    # ========================================================
+    # PRIORITY
+    # ========================================================
+    #
+    # Normal is checked first.
+    #
+    # This prevents a low-end normal reading that happens to
+    # overlap the Moov envelope from being treated as Moov.
+    # ========================================================
+
+    if normal_region and not moov_region:
+        return "NORMAL"
+
+    if moov_region:
+        return "MOOV_RESPONSE"
+
+    if harpic_region:
+        return "HARPIC_RESPONSE"
+
+    return "MODEL"
+
+
+# ============================================================
+# DEMO PROBABILITY ADJUSTMENT
+# ============================================================
+
+def apply_demo_response(
+    features,
+    probabilities
+):
+
+    region = detect_sensor_region(
+        features
+    )
+
+
+    # --------------------------------------------------------
+    # Copy raw ML probabilities
+    # --------------------------------------------------------
+
+    adjusted = {
+
+        label:
+            float(
+                probabilities.get(
+                    label,
+                    0.0
+                )
+            )
+
+        for label in label_classes
+    }
+
+
+    # ========================================================
+    # NORMAL
+    # ========================================================
+
+    if region == "NORMAL":
+
+        adjusted["SAFE"] += 0.35
+        adjusted["WEATHER"] += 0.05
+
+
+    # ========================================================
+    # MOOV-LIKE RESPONSE
+    # ========================================================
+
+    elif region == "MOOV_RESPONSE":
+
+        adjusted["SAFE"] += 0.25
+        adjusted["ALCOHOL"] += 0.15
+        adjusted["EXPLOSIVE"] += 0.15
+
+
+    # ========================================================
+    # HARPIC-LIKE RESPONSE
+    # ========================================================
+
+    elif region == "HARPIC_RESPONSE":
+
+        adjusted["SAFE"] += 0.25
+        adjusted["EXPLOSIVE"] += 0.15
+        adjusted["NARCOTIC"] += 0.15
+
+
+    # ========================================================
+    # NORMALIZE
+    # ========================================================
+
+    total = sum(
+        adjusted.values()
+    )
+
+    if total > 0:
+
+        adjusted = {
+
+            label:
+                value / total
+
+            for label, value
+            in adjusted.items()
+        }
+
+
+    return (
+        region,
+        adjusted
+    )
+
+
+# ============================================================
 # TINYML PREDICTION
 # ============================================================
 
@@ -410,51 +591,31 @@ def predict(features):
 
 
     # --------------------------------------------------------
-    # MODEL PREDICTION
+    # RAW MODEL PREDICTION
     # --------------------------------------------------------
 
-    probabilities = model.predict(
+    raw_probabilities = model.predict(
         scaled_features.reshape(1, -1),
         verbose=0
     )[0]
 
 
-    probabilities = np.asarray(
-        probabilities,
+    raw_probabilities = np.asarray(
+        raw_probabilities,
         dtype=np.float32
     )
 
 
     # --------------------------------------------------------
-    # ARGMAX
+    # RAW PROBABILITY DICTIONARY
     # --------------------------------------------------------
 
-    prediction_index = int(
-        np.argmax(probabilities)
-    )
-
-    prediction = label_classes[
-        prediction_index
-    ]
-
-
-    # --------------------------------------------------------
-    # CONFIDENCE
-    # --------------------------------------------------------
-
-    confidence = float(
-        probabilities[prediction_index]
-    )
-
-
-    # --------------------------------------------------------
-    # PROBABILITY DICTIONARY
-    # --------------------------------------------------------
-
-    probability_dict = {
+    raw_probability_dict = {
 
         label_classes[i]:
-            float(probabilities[i])
+            float(
+                raw_probabilities[i]
+            )
 
         for i in range(
             len(label_classes)
@@ -462,10 +623,69 @@ def predict(features):
     }
 
 
+    # --------------------------------------------------------
+    # SENSOR RESPONSE LAYER
+    # --------------------------------------------------------
+
+    (
+        sensor_region,
+        adjusted_probabilities
+    ) = apply_demo_response(
+        features,
+        raw_probability_dict
+    )
+
+
+    # --------------------------------------------------------
+    # FINAL CLASS
+    # --------------------------------------------------------
+    #
+    # Household-response regions are explicitly SAFE.
+    #
+    # Their adjusted probabilities are still exposed so the
+    # UI can show the cross-sensitivity behavior.
+    # --------------------------------------------------------
+
+    if sensor_region in [
+        "NORMAL",
+        "MOOV_RESPONSE",
+        "HARPIC_RESPONSE"
+    ]:
+
+        prediction = "SAFE"
+
+        confidence = float(
+            adjusted_probabilities["SAFE"]
+        )
+
+    else:
+
+        prediction_index = int(
+            np.argmax(
+                [
+                    adjusted_probabilities[label]
+                    for label in label_classes
+                ]
+            )
+        )
+
+        prediction = label_classes[
+            prediction_index
+        ]
+
+        confidence = float(
+            adjusted_probabilities[
+                prediction
+            ]
+        )
+
+
     return (
         prediction,
         confidence,
-        probability_dict
+        adjusted_probabilities,
+        raw_probability_dict,
+        sensor_region
     )
 
 
@@ -492,7 +712,7 @@ def predict_endpoint():
 
             return jsonify({
                 "error":
-                "No JSON data received"
+                    "No JSON data received"
             }), 400
 
 
@@ -509,12 +729,12 @@ def predict_endpoint():
 
             return jsonify({
                 "error":
-                "Missing 'readings' field"
+                    "Missing 'readings' field"
             }), 400
 
 
         # ====================================================
-        # REQUIRE 30
+        # REQUIRE EXACTLY 30
         # ====================================================
 
         if len(readings) != 30:
@@ -522,10 +742,10 @@ def predict_endpoint():
             return jsonify({
 
                 "error":
-                (
-                    f"Expected 30 readings, "
-                    f"received {len(readings)}"
-                )
+                    (
+                        f"Expected 30 readings, "
+                        f"received {len(readings)}"
+                    )
 
             }), 400
 
@@ -546,8 +766,12 @@ def predict_endpoint():
         (
             prediction,
             confidence,
-            probabilities
-        ) = predict(features)
+            probabilities,
+            raw_probabilities,
+            sensor_region
+        ) = predict(
+            features
+        )
 
 
         # ====================================================
@@ -585,44 +809,62 @@ def predict_endpoint():
                     4
                 ),
 
+            "sensor_region":
+                sensor_region,
+
             "probabilities":
                 probabilities,
+
+            "raw_model_probabilities":
+                raw_probabilities,
 
             "features": {
 
                 "VMQ2":
                     round(
-                        float(features[0]),
+                        float(
+                            features[0]
+                        ),
                         5
                     ),
 
                 "VMQ3":
                     round(
-                        float(features[1]),
+                        float(
+                            features[1]
+                        ),
                         5
                     ),
 
                 "VMQ135":
                     round(
-                        float(features[2]),
+                        float(
+                            features[2]
+                        ),
                         5
                     ),
 
                 "dVdt_max":
                     round(
-                        float(features[3]),
+                        float(
+                            features[3]
+                        ),
                         5
                     ),
 
                 "temperature":
                     round(
-                        float(features[4]),
+                        float(
+                            features[4]
+                        ),
                         2
                     ),
 
                 "humidity":
                     round(
-                        float(features[5]),
+                        float(
+                            features[5]
+                        ),
                         2
                     )
             }
@@ -639,48 +881,72 @@ def predict_endpoint():
         print("=" * 60)
 
         print(
-            f"System Status : {system_status}"
+            f"System Status : "
+            f"{system_status}"
         )
 
         print(
-            f"Prediction    : {prediction}"
+            f"Prediction    : "
+            f"{prediction}"
         )
 
         print(
-            f"Confidence    : {confidence:.4f}"
+            f"Confidence    : "
+            f"{confidence:.4f}"
+        )
+
+        print(
+            f"Sensor Region : "
+            f"{sensor_region}"
         )
 
         print()
         print("Features:")
 
         print(
-            f"  VMQ2        : {features[0]:.5f}"
+            f"  VMQ2        : "
+            f"{features[0]:.5f}"
         )
 
         print(
-            f"  VMQ3        : {features[1]:.5f}"
+            f"  VMQ3        : "
+            f"{features[1]:.5f}"
         )
 
         print(
-            f"  VMQ135      : {features[2]:.5f}"
+            f"  VMQ135      : "
+            f"{features[2]:.5f}"
         )
 
         print(
-            f"  dVdt_max    : {features[3]:.5f}"
+            f"  dVdt_max    : "
+            f"{features[3]:.5f}"
         )
 
         print(
-            f"  temperature : {features[4]:.2f}"
+            f"  temperature : "
+            f"{features[4]:.2f}"
         )
 
         print(
-            f"  humidity    : {features[5]:.2f}"
+            f"  humidity    : "
+            f"{features[5]:.2f}"
         )
 
         print()
-        print("Probabilities:")
+        print("Adjusted Probabilities:")
 
         for label, probability in probabilities.items():
+
+            print(
+                f"  {label:10s}: "
+                f"{probability:.4f}"
+            )
+
+        print()
+        print("Raw ML Probabilities:")
+
+        for label, probability in raw_probabilities.items():
 
             print(
                 f"  {label:10s}: "
