@@ -616,15 +616,14 @@ def get_demo_probabilities(device_id):
         + DEMO_NARCOTIC_SECONDS
         + DEMO_PAUSE_SECONDS
     ):
-        weather_weight = DEMO_RNG.uniform(0.35, 0.65)
         base = np.array([
-            0.50 - weather_weight * 0.10,
-            0.30 + weather_weight * 0.10,
+            0.70,
+            0.14,
             0.07,
             0.08,
             0.05,
         ])
-        dominant_label = None
+        dominant_label = "SAFE"
     else:
         base = np.array([0.08, 0.08, 0.07, 0.68, 0.09])
         dominant_label = "EXPLOSIVE"
