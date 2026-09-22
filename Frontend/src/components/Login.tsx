@@ -64,27 +64,17 @@ export default function Login({ onLogin }: Props) {
           <div className="font-display text-[56px] md:text-[72px] text-ivory leading-[.92] tracking-wide mb-6">
             SECURE THE<br/><span className="text-signal-red">RAILWAY.</span><br/>DETECT THE<br/>UNSEEN.
           </div>
-          <p className="font-body text-[13px] text-warm-grey max-w-[340px] leading-relaxed">
-            Centralized monitoring and real-time intelligence for connected SENTRY detection devices across Indian railway networks.
-          </p>
+          
         </div>
 
         {/* Footer meta */}
-        <div className="relative z-10">
-          <div className="h-[1px] bg-brass/25 mb-4"/>
-          <div className="font-mono text-[9.5px] text-warm-grey space-y-1 tracking-[.18em] uppercase">
-            <div className="text-brass">MINISTRY OF RAILWAYS // SECURITY SYSTEMS DIVISION</div>
-            <div>SECURE NETWORK // AES-256 // TLS 1.3</div>
-            <div>SENTRY OS // CONTROL CENTER v1.0.0-PROD</div>
-          </div>
-        </div>
+        
       </div>
 
       {/* ─── RIGHT PANEL ─── */}
       <div className="w-full md:w-[420px] flex flex-col justify-center p-8 md:p-12 relative bg-charcoal">
         {/* thin red top bar */}
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-signal-red"/>
-        <div className="absolute top-4 right-5 font-mono text-[9px] tracking-widest uppercase text-warm-grey/50">v1.0.0</div>
 
         <div className="max-w-sm w-full mx-auto">
           <div className="mb-8">
@@ -125,13 +115,7 @@ export default function Login({ onLogin }: Props) {
             </div>
             {/* Submit */}
             <button type="submit" className="btn-primary w-full tracking-[.16em]">LOGIN TO SENTRY</button>
-
           </form>
-
-          <div className="mt-10 pt-5 border-t border-warm-grey/10 text-center space-y-1">
-            <div className="font-mono text-[9px] tracking-[.2em] uppercase text-warm-grey/40">SECURE RAILWAY NETWORK</div>
-            <div className="font-mono text-[9px] tracking-[.2em] uppercase text-signal-red">AUTHORIZED PERSONNEL ONLY</div>
-          </div>
         </div>
       </div>
     </div>

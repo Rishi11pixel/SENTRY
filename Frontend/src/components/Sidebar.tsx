@@ -67,15 +67,6 @@ function SidebarInner({ active, onNav, alertCount }: Omit<Props,"mobileOpen"|"on
         })}
       </nav>
 
-      {/* Status */}
-      <div className={`px-4 py-2.5 border-t ${bdr}`}>
-        <div className={`font-mono text-[8px] tracking-[.2em] uppercase ${muted} mb-1.5`}>SYSTEM STATUS</div>
-        <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-safe pulse-green inline-block flex-shrink-0"/>
-          <span className="font-mono text-[9px] text-safe tracking-widest">ALL SYSTEMS OPERATIONAL</span>
-        </div>
-      </div>
-
       {/* User */}
       <div className={`px-4 py-2.5 border-t ${bdr} bg-obsidian/40`}>
         <div className={`font-mono text-[8px] tracking-widest uppercase ${muted} mb-0.5`}>USER</div>
