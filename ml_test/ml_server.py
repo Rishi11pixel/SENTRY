@@ -838,13 +838,12 @@ def predict_endpoint():
 
 
         readiness_states = {
-            reading.get("source_status")
+            str(reading.get("source_status", "")).strip().upper()
             for reading in readings
             if isinstance(reading, dict)
-            and "source_status" in reading
         }
 
-        if readiness_states != {"READY"}:
+        if readiness_states & {"WARMUP", "CALIBRATION"}:
             return jsonify({
                 "error":
                     "Sensor warmup and calibration are not complete."
