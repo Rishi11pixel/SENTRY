@@ -407,6 +407,14 @@ def create_alert_history_event(device_id: str, prediction_record: dict[str, Any]
         )
 
 
+def resolve_device_alerts(device_id: str) -> None:
+    resolve_alert_event(device_id)
+    for incident in incidents.values():
+        if incident["device"] == device_id and incident["status"] != "RESOLVED":
+            incident["status"] = "RESOLVED"
+            incident["updatedAt"] = utc_now()
+
+
 def create_prediction(device_id: str, window: list[dict[str, Any]]) -> dict[str, Any] | None:
     device = get_device(device_id)
     try:
@@ -445,6 +453,8 @@ def create_prediction(device_id: str, window: list[dict[str, Any]]) -> dict[str,
         }
     )
     create_alert_history_event(device_id, prediction_record)
+    if system_status == "NON-THREAT":
+        resolve_device_alerts(device_id)
     add_log(
         device_id,
         f"Model result: {prediction} ({system_status}) - Confidence {confidence * 100:.1f}%",
