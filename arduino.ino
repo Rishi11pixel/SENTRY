@@ -8,7 +8,7 @@
 // Match the actual Wi-Fi network and the backend LAN IP shown by Flask.
 const char* WIFI_SSID     = "Om 2.4g";
 const char* WIFI_PASSWORD = "7291849609";
-const char* BACKEND_HOST  = "192.168.1.67";
+const char* BACKEND_HOST  = "10.146.12.242";
 const char* DEVICE_ID     = "SENTRY-014";
 
 const uint16_t BACKEND_PORT = 8000;

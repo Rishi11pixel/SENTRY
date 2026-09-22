@@ -21,14 +21,14 @@ NON_THREAT_LABELS = {"SAFE", "WEATHER", "ALCOHOL"}
 THREAT_LABELS = {"EXPLOSIVE", "NARCOTIC"}
 OPTIONAL_METADATA_FIELDS = ("source_status", "test_object")
 
-# Bind to all local network interfaces so the ESP32 on the LAN can POST readings.
-BACKEND_HOST = os.getenv("SENTRY_BACKEND_HOST", "0.0.0.0")
+# Bind to the LAN IP used by the ESP32 and local dashboard so the device can POST readings.
+BACKEND_HOST = os.getenv("SENTRY_BACKEND_HOST", "192.168.1.67")
 BACKEND_PORT = int(os.getenv("SENTRY_BACKEND_PORT", "8000"))
 ML_SERVER_URL = os.getenv("SENTRY_ML_URL", "http://127.0.0.1:5000")
 ML_TIMEOUT_SECONDS = float(os.getenv("SENTRY_ML_TIMEOUT_SECONDS", "10"))
 FRONTEND_ORIGINS = os.getenv(
     "SENTRY_FRONTEND_ORIGINS",
-    "http://localhost:5173,http://127.0.0.1:5173,http://localhost:8443,http://127.0.0.1:8443",
+    "http://localhost:5173,http://127.0.0.1:5173,http://192.168.1.67:5173,http://localhost:8443,http://127.0.0.1:8443,http://192.168.1.67:8443",
 ).split(",")
 
 
