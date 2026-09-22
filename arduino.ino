@@ -22,7 +22,8 @@ const uint16_t BACKEND_PORT = 8000;
 #define MQ135_PIN   34
 
 #define RED_LED_PIN    13
-#define GREEN_LED_PIN  14
+#define BLUE_LED_PIN   14
+#define SAFE_LED_PIN   BLUE_LED_PIN
 
 /*
  * Buzzer GPIO is intentionally not defined.
@@ -198,7 +199,7 @@ void applyBackendSafetyState(
   );
 
   digitalWrite(
-    GREEN_LED_PIN,
+    SAFE_LED_PIN,
     isAlert ? LOW : HIGH
   );
 
@@ -765,7 +766,7 @@ void setup() {
   );
 
   pinMode(
-    GREEN_LED_PIN,
+    SAFE_LED_PIN,
     OUTPUT
   );
 
@@ -775,7 +776,7 @@ void setup() {
   );
 
   digitalWrite(
-    GREEN_LED_PIN,
+    SAFE_LED_PIN,
     HIGH
   );
 

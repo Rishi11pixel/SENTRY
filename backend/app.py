@@ -15,6 +15,7 @@ from flask import Flask, jsonify, request
 
 
 WINDOW_SIZE = 30
+PREDICTION_INTERVAL_SECONDS = 3.0
 READING_FIELDS = ("temperature", "humidity", "mq2", "mq3", "mq135")
 MODEL_LABELS = ("SAFE", "WEATHER", "ALCOHOL", "EXPLOSIVE", "NARCOTIC")
 NON_THREAT_LABELS = {"SAFE", "WEATHER", "ALCOHOL"}
@@ -212,6 +213,7 @@ def default_device(device_id: str) -> dict[str, Any]:
         "mapY": map_y,
         "latestReading": None,
         "latestPrediction": None,
+        "lastPredictionAt": None,
         "registeredAt": utc_now(),
     }
 
@@ -450,12 +452,11 @@ def create_prediction(device_id: str, window: list[dict[str, Any]]) -> dict[str,
             "lastResult": display_result(prediction),
             "confidence": round(confidence * 100, 2),
             "latestPrediction": prediction_record,
+            "lastPredictionAt": utc_now(),
             "lastSync": prediction_record["timestamp"],
         }
     )
     create_alert_history_event(device_id, prediction_record)
-    if system_status == "NON-THREAT":
-        resolve_device_alerts(device_id)
     add_log(
         device_id,
         f"Model result: {prediction} ({system_status}) - Confidence {confidence * 100:.1f}%",
@@ -484,6 +485,16 @@ def create_prediction(device_id: str, window: list[dict[str, Any]]) -> dict[str,
 
 
 def process_pending_windows(device_id: str) -> dict[str, Any] | None:
+    device = get_device(device_id)
+    last_prediction_at = device.get("lastPredictionAt")
+    if last_prediction_at is not None:
+        try:
+            last_prediction_ts = datetime.fromisoformat(last_prediction_at.replace("Z", "+00:00")).timestamp()
+            if (datetime.now(timezone.utc).timestamp() - last_prediction_ts) < PREDICTION_INTERVAL_SECONDS:
+                return None
+        except ValueError:
+            pass
+
     latest_prediction = None
     queue = pending_windows[device_id]
     while queue:

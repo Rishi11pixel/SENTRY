@@ -34,9 +34,10 @@ app = Flask(__name__)
 # CONTROLLED DEMONSTRATION STATE
 # ============================================================
 
+DEMO_PREDICT_INTERVAL_SECONDS = 3.0
 DEMO_SAFE_SECONDS = 10.0
-DEMO_NARCOTIC_SECONDS = 5.0
-DEMO_PAUSE_SECONDS = 8.0
+DEMO_NARCOTIC_SECONDS = 4.0
+DEMO_SAFE_PAUSE_SECONDS = 10.0
 DEMO_EXPLOSIVE_SECONDS = 4.0
 DEMO_RNG = np.random.default_rng()
 demo_sessions = {}
@@ -600,42 +601,60 @@ def get_demo_probabilities(device_id):
         {
             "started_at": now,
             "sample_number": 0,
-        }
+            "last_phase": None,
+            "cycle_completed": False,
+        },
     )
 
     elapsed = now - session["started_at"]
     session["sample_number"] += 1
 
-    if elapsed < DEMO_SAFE_SECONDS:
+    total_cycle_seconds = (
+        DEMO_SAFE_SECONDS
+        + DEMO_NARCOTIC_SECONDS
+        + DEMO_SAFE_PAUSE_SECONDS
+        + DEMO_EXPLOSIVE_SECONDS
+    )
+
+    if session["cycle_completed"] or elapsed >= total_cycle_seconds:
+        session["cycle_completed"] = True
         base = np.array([0.70, 0.14, 0.07, 0.06, 0.03])
         dominant_label = "SAFE"
+        phase = "SAFE"
+
+    elif elapsed < DEMO_SAFE_SECONDS:
+        base = np.array([0.70, 0.14, 0.07, 0.06, 0.03])
+        dominant_label = "SAFE"
+        phase = "SAFE"
+
     elif elapsed < DEMO_SAFE_SECONDS + DEMO_NARCOTIC_SECONDS:
         base = np.array([0.08, 0.10, 0.07, 0.10, 0.65])
         dominant_label = "NARCOTIC"
-    elif elapsed < (
-        DEMO_SAFE_SECONDS
-        + DEMO_NARCOTIC_SECONDS
-        + DEMO_PAUSE_SECONDS
-    ):
-        base = np.array([
-            0.70,
-            0.14,
-            0.07,
-            0.08,
-            0.05,
-        ])
+        phase = "NARCOTIC_ALERT"
+
+    elif elapsed < DEMO_SAFE_SECONDS + DEMO_NARCOTIC_SECONDS + DEMO_SAFE_PAUSE_SECONDS:
+        base = np.array([0.70, 0.14, 0.07, 0.08, 0.05])
         dominant_label = "SAFE"
-    elif elapsed < (
-        DEMO_SAFE_SECONDS
-        + DEMO_NARCOTIC_SECONDS
-        + DEMO_PAUSE_SECONDS
-        + DEMO_EXPLOSIVE_SECONDS
-    ):
+        phase = "SAFE"
+
+    elif elapsed < total_cycle_seconds:
         base = np.array([0.08, 0.08, 0.07, 0.68, 0.09])
         dominant_label = "EXPLOSIVE"
+        phase = "EXPLOSIVE_ALERT"
+
     else:
+        session["cycle_completed"] = True
         base = np.array([0.70, 0.14, 0.07, 0.06, 0.03])
         dominant_label = "SAFE"
+        phase = "SAFE"
+
+    if session["last_phase"] != phase:
+        print(
+            f"[ML_DEMO] device={device_id} elapsed={elapsed:.1f}s phase={phase} "
+            f"dominant={dominant_label}",
+            flush=True,
+        )
+        session["last_phase"] = phase
 
     probabilities = np.maximum(
         base + DEMO_RNG.normal(0.0, 0.012, len(label_classes)),
@@ -645,9 +664,7 @@ def get_demo_probabilities(device_id):
 
     if dominant_label is not None:
         dominant_index = label_classes.index(dominant_label)
-        other_max = np.max(
-            np.delete(probabilities, dominant_index)
-        )
+        other_max = np.max(np.delete(probabilities, dominant_index))
         if probabilities[dominant_index] <= other_max:
             probabilities[dominant_index] = other_max + 0.02
             probabilities /= probabilities.sum()
@@ -656,7 +673,6 @@ def get_demo_probabilities(device_id):
         label: float(probabilities[index])
         for index, label in enumerate(label_classes)
     }
-
 
 # ============================================================
 # TINYML PREDICTION
