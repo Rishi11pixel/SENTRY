@@ -21,14 +21,15 @@ NON_THREAT_LABELS = {"SAFE", "WEATHER", "ALCOHOL"}
 THREAT_LABELS = {"EXPLOSIVE", "NARCOTIC"}
 OPTIONAL_METADATA_FIELDS = ("source_status", "test_object")
 
-# Bind to the LAN IP used by the ESP32 and local dashboard so the device can POST readings.
-BACKEND_HOST = os.getenv("SENTRY_BACKEND_HOST", "192.168.1.67")
+# Bind to all local interfaces so the ESP32 can reach the backend on the same LAN.
+# Override with SENTRY_BACKEND_HOST if you need a specific interface.
+BACKEND_HOST = os.getenv("SENTRY_BACKEND_HOST", "0.0.0.0")
 BACKEND_PORT = int(os.getenv("SENTRY_BACKEND_PORT", "8000"))
 ML_SERVER_URL = os.getenv("SENTRY_ML_URL", "http://127.0.0.1:5000")
 ML_TIMEOUT_SECONDS = float(os.getenv("SENTRY_ML_TIMEOUT_SECONDS", "10"))
 FRONTEND_ORIGINS = os.getenv(
     "SENTRY_FRONTEND_ORIGINS",
-    "http://localhost:5173,http://127.0.0.1:5173,http://192.168.1.67:5173,http://localhost:8443,http://127.0.0.1:8443,http://192.168.1.67:8443",
+    "http://localhost:5173,http://127.0.0.1:5173,http://10.146.12.242:5173,http://localhost:8443,http://127.0.0.1:8443,http://10.146.12.242:8443",
 ).split(",")
 
 
@@ -501,10 +502,15 @@ def health():
 
 @app.post("/api/v1/devices/<device_id>/readings")
 def ingest_reading(device_id: str):
+    incoming = request.get_json(silent=True)
+    print(f"[BACKEND] Incoming request: device={device_id} payload={incoming}")
+
     if not device_id.strip():
+        print("[BACKEND] Rejected request: blank device_id")
         return error("Device ID is required.")
-    reading, validation_error = validate_reading(request.get_json(silent=True))
+    reading, validation_error = validate_reading(incoming)
     if validation_error:
+        print(f"[BACKEND] Validation failed for {device_id}: {validation_error}")
         return error(validation_error)
 
     with lock:
@@ -556,6 +562,8 @@ def ingest_reading(device_id: str):
             "prediction": prediction,
             "latestReading": device["latestReading"],
         }
+
+    print(f"[BACKEND] Response for {device_id}: {response}")
     return jsonify(response), 200
 
 

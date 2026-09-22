@@ -8,7 +8,7 @@
 // Match the actual Wi-Fi network and the backend LAN IP shown by Flask.
 const char* WIFI_SSID     = "Om 2.4g";
 const char* WIFI_PASSWORD = "7291849609";
-const char* BACKEND_HOST  = "10.146.12.242";
+const char* BACKEND_HOST  = "192.168.1.69";
 const char* DEVICE_ID     = "SENTRY-014";
 
 const uint16_t BACKEND_PORT = 8000;
@@ -211,18 +211,6 @@ void applyBackendSafetyState(
 
 #endif
 
-  if (isAlert) {
-
-    Serial.println(
-      "SYSTEM ALERT: RED ON, GREEN OFF, BUZZER ON"
-    );
-
-  } else {
-
-    Serial.println(
-      "SYSTEM SAFE: GREEN ON, RED OFF, BUZZER OFF"
-    );
-  }
 }
 
 
@@ -309,6 +297,14 @@ int computeSignalPercent() {
 void connectWifi() {
 
   WiFi.mode(WIFI_STA);
+
+  Serial.print(
+    "Connecting to WiFi SSID: "
+  );
+
+  Serial.println(
+    WIFI_SSID
+  );
 
   WiFi.begin(
     WIFI_SSID,
@@ -494,7 +490,6 @@ bool sendReading(
   String url =
     buildBackendUrl();
 
-
   httpClient.begin(
     wifiClient,
     url
@@ -650,11 +645,9 @@ void sensorAcquisitionTask(
       lastStatusLogTime =
         millis();
 
-
       Serial.println(
         "------------------------------------------"
       );
-
 
       if (hasValidDhtReading) {
 
@@ -685,7 +678,6 @@ void sensorAcquisitionTask(
         );
       }
 
-
       Serial.print(
         "MQ-2:    "
       );
@@ -693,7 +685,6 @@ void sensorAcquisitionTask(
       Serial.println(
         sample.mq2
       );
-
 
       Serial.print(
         "MQ-3:    "
@@ -703,7 +694,6 @@ void sensorAcquisitionTask(
         sample.mq3
       );
 
-
       Serial.print(
         "MQ-135:  "
       );
@@ -711,7 +701,6 @@ void sensorAcquisitionTask(
       Serial.println(
         sample.mq135
       );
-
 
       Serial.print(
         "WiFi:    "
@@ -735,7 +724,6 @@ void sensorAcquisitionTask(
         "%"
       );
 
-
       Serial.print(
         "HTTP:    "
       );
@@ -745,7 +733,6 @@ void sensorAcquisitionTask(
         ? "success"
         : "pending"
       );
-
 
       Serial.println(
         "------------------------------------------"

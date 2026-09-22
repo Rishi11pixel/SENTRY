@@ -37,6 +37,7 @@ app = Flask(__name__)
 DEMO_SAFE_SECONDS = 10.0
 DEMO_NARCOTIC_SECONDS = 5.0
 DEMO_PAUSE_SECONDS = 8.0
+DEMO_EXPLOSIVE_SECONDS = 4.0
 DEMO_RNG = np.random.default_rng()
 demo_sessions = {}
 
@@ -624,9 +625,17 @@ def get_demo_probabilities(device_id):
             0.05,
         ])
         dominant_label = "SAFE"
-    else:
+    elif elapsed < (
+        DEMO_SAFE_SECONDS
+        + DEMO_NARCOTIC_SECONDS
+        + DEMO_PAUSE_SECONDS
+        + DEMO_EXPLOSIVE_SECONDS
+    ):
         base = np.array([0.08, 0.08, 0.07, 0.68, 0.09])
         dominant_label = "EXPLOSIVE"
+    else:
+        base = np.array([0.70, 0.14, 0.07, 0.06, 0.03])
+        dominant_label = "SAFE"
 
     probabilities = np.maximum(
         base + DEMO_RNG.normal(0.0, 0.012, len(label_classes)),
