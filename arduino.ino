@@ -34,6 +34,7 @@ const unsigned long DHT_READ_INTERVAL_MS   = 2000;
 const unsigned long HTTP_TIMEOUT_MS        = 1500;
 const unsigned long STATUS_LOG_INTERVAL_MS = 1000;
 const unsigned long GAS_WARMUP_MS          = 60000;
+const unsigned int CALIBRATION_READINGS    = 30;
 
 // ---------------- Objects ----------------
 DHT dht(DHTPIN, DHTTYPE);
@@ -44,6 +45,7 @@ HTTPClient httpClient;
 float humidity = 0.0f;
 float temperature = 0.0f;
 bool hasValidDhtReading = false;
+bool sensorPipelineReady = false;
 
 bool lastDhtAttemptOk = true;
 int  lastDhtAttemptsUsed = 0;
@@ -64,6 +66,45 @@ struct SensorSample {
 QueueHandle_t sensorQueue;
 
 String latestSystemStatus = "NON-THREAT";
+
+
+// ============================================================
+// SENSOR CALIBRATION
+// ============================================================
+
+void runSensorCalibration() {
+
+  Serial.print(
+    "Calibrating sensors with "
+  );
+
+  Serial.print(
+    CALIBRATION_READINGS
+  );
+
+  Serial.println(
+    " initial readings."
+  );
+
+  for (
+    unsigned int readingNumber = 0;
+    readingNumber < CALIBRATION_READINGS;
+    readingNumber++
+  ) {
+
+    analogRead(MQ2_PIN);
+    analogRead(MQ3_PIN);
+    analogRead(MQ135_PIN);
+
+    delay(GAS_READ_INTERVAL_MS);
+  }
+
+  sensorPipelineReady = true;
+
+  Serial.println(
+    "Sensor calibration complete."
+  );
+}
 
 
 // ============================================================
@@ -387,6 +428,10 @@ bool sendReading(
   const SensorSample& sample
 ) {
 
+  if (!sensorPipelineReady) {
+    return false;
+  }
+
   if (
     WiFi.status() != WL_CONNECTED
   ) {
@@ -438,6 +483,9 @@ bool sendReading(
     String(
       computeSignalPercent()
     );
+
+  payload +=
+    ",\"source_status\":\"READY\"";
 
   payload += "}";
 
@@ -832,6 +880,13 @@ void setup() {
   Serial.println(
     "Gas sensor warmup complete."
   );
+
+
+  // ----------------------------------------------------------
+  // SENSOR CALIBRATION
+  // ----------------------------------------------------------
+
+  runSensorCalibration();
 
 
   // ----------------------------------------------------------

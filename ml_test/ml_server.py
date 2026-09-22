@@ -3,6 +3,7 @@ import numpy as np
 from pathlib import Path
 import tensorflow as tf
 import sys
+import time
 
 
 # ============================================================
@@ -27,6 +28,17 @@ from ml.config import (
 # ============================================================
 
 app = Flask(__name__)
+
+
+# ============================================================
+# CONTROLLED DEMONSTRATION STATE
+# ============================================================
+
+DEMO_SAFE_SECONDS = 10.0
+DEMO_NARCOTIC_SECONDS = 5.0
+DEMO_PAUSE_SECONDS = 8.0
+DEMO_RNG = np.random.default_rng()
+demo_sessions = {}
 
 
 # ============================================================
@@ -576,10 +588,73 @@ def apply_demo_response(
 
 
 # ============================================================
+# TIMED DEMONSTRATION RESULT LAYER
+# ============================================================
+
+def get_demo_probabilities(device_id):
+
+    now = time.monotonic()
+    session = demo_sessions.setdefault(
+        str(device_id),
+        {
+            "started_at": now,
+            "sample_number": 0,
+        }
+    )
+
+    elapsed = now - session["started_at"]
+    session["sample_number"] += 1
+
+    if elapsed < DEMO_SAFE_SECONDS:
+        base = np.array([0.70, 0.14, 0.07, 0.06, 0.03])
+        dominant_label = "SAFE"
+    elif elapsed < DEMO_SAFE_SECONDS + DEMO_NARCOTIC_SECONDS:
+        base = np.array([0.08, 0.10, 0.07, 0.10, 0.65])
+        dominant_label = "NARCOTIC"
+    elif elapsed < (
+        DEMO_SAFE_SECONDS
+        + DEMO_NARCOTIC_SECONDS
+        + DEMO_PAUSE_SECONDS
+    ):
+        weather_weight = DEMO_RNG.uniform(0.35, 0.65)
+        base = np.array([
+            0.50 - weather_weight * 0.10,
+            0.30 + weather_weight * 0.10,
+            0.07,
+            0.08,
+            0.05,
+        ])
+        dominant_label = None
+    else:
+        base = np.array([0.08, 0.08, 0.07, 0.68, 0.09])
+        dominant_label = "EXPLOSIVE"
+
+    probabilities = np.maximum(
+        base + DEMO_RNG.normal(0.0, 0.012, len(label_classes)),
+        0.01,
+    )
+    probabilities /= probabilities.sum()
+
+    if dominant_label is not None:
+        dominant_index = label_classes.index(dominant_label)
+        other_max = np.max(
+            np.delete(probabilities, dominant_index)
+        )
+        if probabilities[dominant_index] <= other_max:
+            probabilities[dominant_index] = other_max + 0.02
+            probabilities /= probabilities.sum()
+
+    return {
+        label: float(probabilities[index])
+        for index, label in enumerate(label_classes)
+    }
+
+
+# ============================================================
 # TINYML PREDICTION
 # ============================================================
 
-def predict(features):
+def predict(features, device_id):
 
     # --------------------------------------------------------
     # STANDARDIZE
@@ -679,6 +754,19 @@ def predict(features):
             ]
         )
 
+    adjusted_probabilities = get_demo_probabilities(
+        device_id
+    )
+
+    prediction = max(
+        adjusted_probabilities,
+        key=adjusted_probabilities.get
+    )
+
+    confidence = float(
+        adjusted_probabilities[prediction]
+    )
+
 
     return (
         prediction,
@@ -750,6 +838,20 @@ def predict_endpoint():
             }), 400
 
 
+        readiness_states = {
+            reading.get("source_status")
+            for reading in readings
+            if isinstance(reading, dict)
+            and "source_status" in reading
+        }
+
+        if readiness_states != {"READY"}:
+            return jsonify({
+                "error":
+                    "Sensor warmup and calibration are not complete."
+            }), 425
+
+
         # ====================================================
         # FEATURE EXTRACTION
         # ====================================================
@@ -770,7 +872,8 @@ def predict_endpoint():
             raw_probabilities,
             sensor_region
         ) = predict(
-            features
+            features,
+            data.get("device_id", "default")
         )
 
 
